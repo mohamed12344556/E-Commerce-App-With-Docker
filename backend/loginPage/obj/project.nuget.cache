@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "U3uC//yJqSo=",
+  "dgSpecHash": "XU+dD1CVONY=",
   "success": true,
-  "projectFilePath": "C:\\Users\\amaz8\\OneDrive\\Documents\\Backend\\loginPage\\loginPage\\loginPage\\loginPage.csproj",
+  "projectFilePath": "C:\\Users\\amaz8\\OneDrive\\Documents\\ecommerce-project\\backend\\loginPage\\loginPage.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\amaz8\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\amaz8\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",

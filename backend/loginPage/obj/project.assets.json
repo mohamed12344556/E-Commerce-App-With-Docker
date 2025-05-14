@@ -5106,11 +5106,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\amaz8\\OneDrive\\Documents\\Backend\\loginPage\\loginPage\\loginPage\\loginPage.csproj",
+      "projectUniqueName": "C:\\Users\\amaz8\\OneDrive\\Documents\\ecommerce-project\\backend\\loginPage\\loginPage.csproj",
       "projectName": "loginPage",
-      "projectPath": "C:\\Users\\amaz8\\OneDrive\\Documents\\Backend\\loginPage\\loginPage\\loginPage\\loginPage.csproj",
+      "projectPath": "C:\\Users\\amaz8\\OneDrive\\Documents\\ecommerce-project\\backend\\loginPage\\loginPage.csproj",
       "packagesPath": "C:\\Users\\amaz8\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\amaz8\\OneDrive\\Documents\\Backend\\loginPage\\loginPage\\loginPage\\obj\\",
+      "outputPath": "C:\\Users\\amaz8\\OneDrive\\Documents\\ecommerce-project\\backend\\loginPage\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

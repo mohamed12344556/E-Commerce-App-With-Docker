@@ -20,6 +20,8 @@ class ApiConstants {
   static const String login = '/api/Account/Login';
   static const String register = '/api/Account/Register';
   static const String updateUser = '/api/Account/UpdateUser';
+  static const String getUserDataById = '/api/Account/GetUserDataById';
+  static const String getAllUsers = '/api/Account/GetAllUsers';
 
   // Product endpoints
   static const String addItem = '/api/Item/AddItem';
