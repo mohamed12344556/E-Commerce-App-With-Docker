@@ -1,5 +1,5 @@
 # Stage 1: Build the Flutter web app
-FROM ubuntu:20.04 as build
+FROM ubuntu:20.04 AS build
 
 # Install tools and dependencies
 RUN apt-get update && apt-get install -y \
