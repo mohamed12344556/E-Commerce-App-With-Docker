@@ -149,6 +149,10 @@ The application follows Clean Architecture principles:
    # Push images
    docker push yourusername/ecommerce-backend:latest
    ```
+7. Pull images from Docker Hub:
+   ```bash
+   docker pull yourusername/ecommerce-backend:latest
+   ```
 
 ### Docker Images
 
