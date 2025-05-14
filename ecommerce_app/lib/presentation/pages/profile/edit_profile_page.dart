@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../core/utils/validators.dart';
 import '../../bloc/auth/auth_bloc.dart';
 import '../../bloc/auth/auth_event.dart';
@@ -8,6 +9,8 @@ import '../../bloc/auth/auth_state.dart';
 import '../../widgets/common/loading_indicator.dart';
 
 class EditProfilePage extends StatefulWidget {
+  const EditProfilePage({super.key});
+
   @override
   _EditProfilePageState createState() => _EditProfilePageState();
 }
@@ -17,36 +20,41 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   bool _isLoading = false;
-  
+
   @override
   void initState() {
     super.initState();
     _loadUserProfile();
   }
-  
+
   @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
-  
+
   Future<void> _loadUserProfile() async {
     setState(() {
       _isLoading = true;
     });
-    
+
     final prefs = await SharedPreferences.getInstance();
-    
+
     setState(() {
       _nameController.text = prefs.getString('user_name') ?? '';
       _phoneController.text = prefs.getString('user_phone') ?? '';
       _isLoading = false;
     });
   }
-  
+
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      // إضافة سجلات تصحيح الأخطاء
+      print('Submitting profile update:');
+      print('Name: ${_nameController.text}');
+      print('Phone: ${_phoneController.text}');
+
       context.read<AuthBloc>().add(
         UpdateProfileEvent(
           name: _nameController.text.trim(),
@@ -55,13 +63,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
       );
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Edit Profile'),
-      ),
+      appBar: AppBar(title: Text('Edit Profile')),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is ProfileUpdateSuccess) {
@@ -72,16 +78,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
             _saveUserData();
             Navigator.pop(context);
           } else if (state is ProfileUpdateFailed) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
           }
         },
         builder: (context, state) {
           if (_isLoading) {
             return Center(child: LoadingIndicator());
           }
-          
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Form(
@@ -122,7 +128,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  
+
                   // Name field
                   TextFormField(
                     controller: _nameController,
@@ -134,7 +140,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     validator: Validators.validateUsername,
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Phone field
                   TextFormField(
                     controller: _phoneController,
@@ -147,25 +153,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     validator: Validators.validatePhone,
                   ),
                   const SizedBox(height: 32),
-                  
+
                   // Update button
                   ElevatedButton(
                     onPressed: state is Authenticating ? null : _submitForm,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: state is Authenticating
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
+                      child:
+                          state is Authenticating
+                              ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                              : Text(
+                                'UPDATE PROFILE',
+                                style: TextStyle(fontSize: 16),
                               ),
-                            )
-                          : Text(
-                              'UPDATE PROFILE',
-                              style: TextStyle(fontSize: 16),
-                            ),
                     ),
                   ),
                 ],
@@ -176,10 +183,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
       ),
     );
   }
-  
+
   Future<void> _saveUserData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('user_name', _nameController.text);
     await prefs.setString('user_phone', _phoneController.text);
+
+    print(
+      'Saved profile data: Name: ${_nameController.text}, Phone: ${_phoneController.text}',
+    );
   }
 }

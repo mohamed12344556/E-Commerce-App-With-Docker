@@ -1,3 +1,5 @@
+import 'package:advanced_os_app/core/constants/api_constants.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,20 +20,271 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _username;
   String? _email;
   String? _phoneNumber;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    // _fetchUserProfile();
     _loadUserProfile();
   }
 
-  Future<void> _loadUserProfile() async {
-    final prefs = await SharedPreferences.getInstance();
+  void _loadUserProfile() async {
     setState(() {
-      _username = prefs.getString('user_name') ?? 'User';
-      _email = prefs.getString('user_email') ?? 'N/A';
-      _phoneNumber = prefs.getString('user_phone') ?? 'N/A';
+      _isLoading = true;
     });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      final email = prefs.getString('user_email');
+
+      print('Initial profile data:');
+      print('Email: $email');
+      print('Saved username: ${prefs.getString('user_name')}');
+      print('Saved phone: ${prefs.getString('user_phone')}');
+
+      if (token != null && email != null) {
+        // الحصول على معرف المستخدم من التخزين المحلي
+        String? userId = prefs.getString('user_id');
+        print('Stored user ID: $userId');
+
+        // إذا لم يتم العثور على معرف المستخدم، ابحث عنه بالبريد الإلكتروني
+        if (userId == null) {
+          userId = await _findUserIdByEmail(email, token);
+          if (userId != null) {
+            await prefs.setString('user_id', userId);
+            print('Found and saved user ID: $userId');
+          }
+        }
+
+        if (userId != null) {
+          try {
+            // جلب بيانات المستخدم المحدثة من API
+            final dio = Dio();
+            dio.options.headers['Authorization'] = 'Bearer $token';
+
+            final url =
+                '${ApiConstants.baseUrl}${ApiConstants.getUserDataById}';
+            print('Fetching user data from URL: $url with userId: $userId');
+
+            final response = await dio.get(
+              url,
+              queryParameters: {'userId': userId},
+            );
+
+            print('Profile API response: ${response.data}');
+            print('Response type: ${response.data.runtimeType}');
+
+            if (response.statusCode == 200) {
+              final userData = response.data;
+
+              // طباعة محتوى البيانات
+              if (userData is Map<String, dynamic>) {
+                print('User data keys: ${userData.keys.toList()}');
+
+                // التعامل مع أسماء الحقول المختلفة المحتملة
+                String? name;
+                String? phoneNumber;
+
+                // البحث عن حقل الاسم
+                if (userData.containsKey('name')) {
+                  name = userData['name'];
+                  print('Found name: $name');
+                } else if (userData.containsKey('userName')) {
+                  name = userData['userName'];
+                  print('Found userName: $name');
+                } else if (userData.containsKey('NameUsr')) {
+                  name = userData['NameUsr'];
+                  print('Found NameUsr: $name');
+                }
+
+                // البحث عن حقل رقم الهاتف
+                if (userData.containsKey('phoneNumber')) {
+                  phoneNumber = userData['phoneNumber'];
+                  print('Found phoneNumber: $phoneNumber');
+                } else if (userData.containsKey('PhoneNum')) {
+                  phoneNumber = userData['PhoneNum'];
+                  print('Found PhoneNum: $phoneNumber');
+                } else if (userData.containsKey('phone')) {
+                  phoneNumber = userData['phone'];
+                  print('Found phone: $phoneNumber');
+                }
+
+                // حفظ البيانات إذا تم العثور عليها
+                if (name != null) {
+                  await prefs.setString('user_name', name);
+                  print('Saved name to prefs: $name');
+                }
+
+                if (phoneNumber != null) {
+                  await prefs.setString('user_phone', phoneNumber);
+                  print('Saved phone to prefs: $phoneNumber');
+                }
+
+                if (userData.containsKey('email')) {
+                  await prefs.setString('user_email', userData['email']);
+                  print('Saved email to prefs: ${userData['email']}');
+                }
+
+                await _saveUserDataToPrefs(userData);
+              } else {
+                print('userData is not a Map<String, dynamic>');
+              }
+            }
+          } catch (e) {
+            print('Error fetching profile from API: $e');
+            // المتابعة باستخدام البيانات المحلية
+          }
+        }
+      }
+
+      // تحميل البيانات المحدثة من SharedPreferences بعد محاولة التحديث
+      final updatedName = prefs.getString('user_name');
+      final updatedPhone = prefs.getString('user_phone');
+
+      print('Updated profile data after API call:');
+      print('Updated name from prefs: $updatedName');
+      print('Updated phone from prefs: $updatedPhone');
+
+      setState(() {
+        _username = updatedName ?? 'User';
+        _email = prefs.getString('user_email') ?? 'N/A';
+        _phoneNumber = updatedPhone ?? 'N/A';
+        _isLoading = false;
+      });
+
+      print('Final UI state:');
+      print('_username: $_username');
+      print('_email: $_email');
+      print('_phoneNumber: $_phoneNumber');
+    } catch (e) {
+      print('Error loading profile: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  // دالة مساعدة للبحث عن معرف المستخدم بالبريد الإلكتروني
+  Future<String?> _findUserIdByEmail(String email, String token) async {
+    try {
+      final dio = Dio();
+      dio.options.headers['Authorization'] = 'Bearer $token';
+
+      print('Finding user ID for email: $email');
+
+      final url = '${ApiConstants.baseUrl}${ApiConstants.getAllUsers}';
+      print('GetAllUsers URL: $url');
+
+      final response = await dio.get(url);
+
+      print('GetAllUsers response status: ${response.statusCode}');
+      print('GetAllUsers response type: ${response.data.runtimeType}');
+
+      if (response.data is List) {
+        print('Number of users: ${response.data.length}');
+
+        for (var user in response.data) {
+          print('User data: $user');
+
+          if (user is Map<String, dynamic>) {
+            print('User keys: ${user.keys.toList()}');
+
+            String? userEmail;
+
+            // البحث عن حقل البريد الإلكتروني
+            if (user.containsKey('email')) {
+              userEmail = user['email'];
+            } else if (user.containsKey('Email')) {
+              userEmail = user['Email'];
+            }
+
+            print('Current user email: $userEmail, searching for: $email');
+
+            if (userEmail == email) {
+              // البحث عن حقل المعرف
+              if (user.containsKey('id')) {
+                String userId = user['id'];
+                print('Found matching user with ID: $userId');
+                return userId;
+              } else if (user.containsKey('Id')) {
+                String userId = user['Id'];
+                print('Found matching user with ID (capital): $userId');
+                return userId;
+              }
+            }
+          }
+        }
+
+        print('No matching user found');
+      } else {
+        print('GetAllUsers response is not a list: ${response.data}');
+      }
+
+      return null;
+    } catch (e) {
+      print('Error finding user ID: $e');
+      return null;
+    }
+  }
+
+  Future<void> _saveUserDataToPrefs(Map<String, dynamic> userData) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    print('Saving user data to prefs: $userData');
+
+    // أسماء الحقول المحتملة للاسم
+    final nameKeys = ['name', 'userName', 'NameUsr', 'Name'];
+    for (final key in nameKeys) {
+      if (userData.containsKey(key) && userData[key] != null) {
+        final name = userData[key].toString();
+        if (name.isNotEmpty) {
+          await prefs.setString('user_name', name);
+          print('Saved name: $name');
+          break;
+        }
+      }
+    }
+
+    // أسماء الحقول المحتملة لرقم الهاتف
+    final phoneKeys = ['phoneNumber', 'PhoneNum', 'phone', 'Phone'];
+    for (final key in phoneKeys) {
+      if (userData.containsKey(key) && userData[key] != null) {
+        final phone = userData[key].toString();
+        if (phone.isNotEmpty) {
+          await prefs.setString('user_phone', phone);
+          print('Saved phone: $phone');
+          break;
+        }
+      }
+    }
+
+    // أسماء الحقول المحتملة للبريد الإلكتروني
+    final emailKeys = ['email', 'Email'];
+    for (final key in emailKeys) {
+      if (userData.containsKey(key) && userData[key] != null) {
+        final email = userData[key].toString();
+        if (email.isNotEmpty) {
+          await prefs.setString('user_email', email);
+          print('Saved email: $email');
+          break;
+        }
+      }
+    }
+
+    // أسماء الحقول المحتملة للمعرف
+    final idKeys = ['id', 'Id', 'ID'];
+    for (final key in idKeys) {
+      if (userData.containsKey(key) && userData[key] != null) {
+        final id = userData[key].toString();
+        if (id.isNotEmpty) {
+          await prefs.setString('user_id', id);
+          print('Saved ID: $id');
+          break;
+        }
+      }
+    }
   }
 
   void _logout() {

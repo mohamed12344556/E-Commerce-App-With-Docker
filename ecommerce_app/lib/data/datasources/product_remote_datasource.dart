@@ -23,6 +23,7 @@ class ProductRemoteDataSource {
     }
   }
 
+  // للأجهزة المحمولة
   Future<ProductModel> addProduct({
     required String title,
     required String description,
@@ -44,6 +45,7 @@ class ProductRemoteDataSource {
     return ProductModel.fromJson(response);
   }
 
+  // للويب
   Future<ProductModel> addProductWeb({
     required String title,
     required String description,
@@ -53,8 +55,6 @@ class ProductRemoteDataSource {
       title: title,
       description: description,
     );
-
-    final fileName = 'image_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
     final formData = FormData();
 
@@ -69,21 +69,22 @@ class ProductRemoteDataSource {
         'ImageData',
         MultipartFile.fromBytes(
           imageBytes,
+          filename: 'image_${DateTime.now().millisecondsSinceEpoch}.jpg',
           contentType: MediaType('image', 'jpeg'),
-          // contentType: MediaType('image', 'jpeg'),
         ),
       ),
     );
 
     final response = await _apiClient.post(
       ApiConstants.addItem,
-      // options: Options(contentType: Headers.formUrlEncodedContentType),
-      // options: Options(contentType: 'multipart/form-data'),
+      data: formData,
+      options: Options(contentType: 'multipart/form-data'),
     );
 
     return ProductModel.fromJson(response);
   }
 
+  // للأجهزة المحمولة
   Future<ProductModel> updateProduct({
     required String id,
     required String title,
@@ -98,6 +99,43 @@ class ProductRemoteDataSource {
       '${ApiConstants.updateItem}/$id',
       fields: fields,
       files: files,
+    );
+
+    return ProductModel.fromJson(response);
+  }
+
+  // للويب
+  Future<ProductModel> updateProductWeb({
+    required String id,
+    required String title,
+    required String description,
+    required Uint8List imageBytes,
+  }) async {
+    final fields = {'Title': title, 'Description': description};
+
+    final formData = FormData();
+
+    // إضافة حقول النموذج
+    fields.forEach((key, value) {
+      formData.fields.add(MapEntry(key, value.toString()));
+    });
+
+    // إضافة الصورة
+    formData.files.add(
+      MapEntry(
+        'ImageData',
+        MultipartFile.fromBytes(
+          imageBytes,
+          filename: 'image_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          contentType: MediaType('image', 'jpeg'),
+        ),
+      ),
+    );
+
+    final response = await _apiClient.put(
+      '${ApiConstants.updateItem}/$id',
+      data: formData,
+      options: Options(contentType: 'multipart/form-data'),
     );
 
     return ProductModel.fromJson(response);

@@ -41,9 +41,32 @@ class ApiClient {
   }
 
   // POST request
-  Future<dynamic> post(String endpoint, {dynamic data}) async {
+  // Future<dynamic> post(
+  //   String endpoint, {
+  //   dynamic data,
+  //   Options? options, // إضافة خيار Options
+  // }) async {
+  //   try {
+  //     final response = await _dio.post(
+  //       endpoint,
+  //       data: data,
+  //       options: options, // إضافة الخيارات
+  //     );
+  //     return response.data;
+  //   } on DioException catch (e) {
+  //     _handleError(e);
+  //   }
+  // }
+
+  Future<dynamic> post(
+    String endpoint, {
+    dynamic data,
+    Options? options,
+  }) async {
     try {
-      final response = await _dio.post(endpoint, data: data);
+      final response = await _dio.post(endpoint, data: data, options: options);
+
+      // response.data يمكن أن يكون من أنواع مختلفة: String, Map, List...
       return response.data;
     } on DioException catch (e) {
       _handleError(e);
@@ -89,11 +112,45 @@ class ApiClient {
   }
 
   // PUT request
-  Future<dynamic> put(String endpoint, {dynamic data}) async {
+  // Future<dynamic> put(
+  //   String endpoint, {
+  //   dynamic data,
+  //   Options? options, // إضافة خيار Options
+  // }) async {
+  //   try {
+  //     final response = await _dio.put(
+  //       endpoint,
+  //       data: data,
+  //       options: options, // إضافة الخيارات
+  //     );
+  //     return response.data;
+  //   } on DioException catch (e) {
+  //     _handleError(e);
+  //   }
+  // }
+
+  Future<dynamic> put(
+    String endpoint, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters, // إضافة معلمات الاستعلام
+    Options? options,
+  }) async {
     try {
-      final response = await _dio.put(endpoint, data: data);
+      print('PUT request to: $endpoint');
+      print('Query params: $queryParameters');
+      print('Data: $data');
+
+      final response = await _dio.put(
+        endpoint,
+        data: data,
+        queryParameters: queryParameters, // استخدام معلمات الاستعلام
+        options: options,
+      );
+
+      print('PUT response: ${response.data}');
       return response.data;
     } on DioException catch (e) {
+      print('PUT error: $e');
       _handleError(e);
     }
   }

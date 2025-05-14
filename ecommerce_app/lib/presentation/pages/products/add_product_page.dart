@@ -1,5 +1,7 @@
+// تعديل add_product_page.dart
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -20,7 +22,12 @@ class _AddProductPageState extends State<AddProductPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+
+  // تغيير متغيرات الصورة
   File? _imageFile;
+  Uint8List? _imageBytes;
+  String? _imageName;
+
   final _imagePicker = ImagePicker();
 
   @override
@@ -34,29 +41,51 @@ class _AddProductPageState extends State<AddProductPage> {
     final pickedFile = await _imagePicker.pickImage(
       source: ImageSource.gallery,
     );
+
     if (pickedFile != null) {
       setState(() {
-        _imageFile = File(pickedFile.path);
+        if (kIsWeb) {
+          // في حالة الويب، نحتاج إلى قراءة الصورة كـ bytes
+          pickedFile.readAsBytes().then((value) {
+            setState(() {
+              _imageBytes = value;
+              _imageName = pickedFile.name;
+            });
+          });
+        } else {
+          // في حالة تطبيقات الموبايل
+          _imageFile = File(pickedFile.path);
+        }
       });
     }
   }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      if (_imageFile == null) {
+      if (_imageFile == null && _imageBytes == null) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Please select an image')));
         return;
       }
 
-      context.read<ProductsBloc>().add(
-        AddProductEvent(
-          title: _titleController.text.trim(),
-          description: _descriptionController.text.trim(),
-          imageFile: _imageFile!,
-        ),
-      );
+      if (kIsWeb) {
+        context.read<ProductsBloc>().add(
+          AddProductWebEvent(
+            title: _titleController.text.trim(),
+            description: _descriptionController.text.trim(),
+            imageBytes: _imageBytes!,
+          ),
+        );
+      } else {
+        context.read<ProductsBloc>().add(
+          AddProductEvent(
+            title: _titleController.text.trim(),
+            description: _descriptionController.text.trim(),
+            imageFile: _imageFile!,
+          ),
+        );
+      }
     }
   }
 
@@ -89,7 +118,7 @@ class _AddProductPageState extends State<AddProductPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Image picker
+                  // مربع اختيار الصورة
                   GestureDetector(
                     onTap: _pickImage,
                     child: Container(
@@ -101,37 +130,12 @@ class _AddProductPageState extends State<AddProductPage> {
                           color: Theme.of(context).dividerColor,
                         ),
                       ),
-                      child:
-                          _imageFile != null
-                              ? ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.file(
-                                  _imageFile!,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                ),
-                              )
-                              : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.add_a_photo,
-                                    size: 50,
-                                    color: Theme.of(context).primaryColor,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Tap to add product image',
-                                    style:
-                                        Theme.of(context).textTheme.titleMedium,
-                                  ),
-                                ],
-                              ),
+                      child: _getImageWidget(),
                     ),
                   ),
                   const SizedBox(height: 24),
 
-                  // Title field
+                  // حقل العنوان
                   TextFormField(
                     controller: _titleController,
                     decoration: InputDecoration(
@@ -147,7 +151,7 @@ class _AddProductPageState extends State<AddProductPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Description field
+                  // حقل الوصف
                   TextFormField(
                     controller: _descriptionController,
                     maxLines: 5,
@@ -165,7 +169,7 @@ class _AddProductPageState extends State<AddProductPage> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Submit button
+                  // زر الإرسال
                   ElevatedButton(
                     onPressed: _submitForm,
                     child: Padding(
@@ -183,5 +187,47 @@ class _AddProductPageState extends State<AddProductPage> {
         },
       ),
     );
+  }
+
+  // دالة مساعدة لعرض الصورة بناءً على البيئة
+  Widget _getImageWidget() {
+    if (kIsWeb && _imageBytes != null) {
+      // عرض الصورة في الويب
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.memory(
+          _imageBytes!,
+          fit: BoxFit.cover,
+          width: double.infinity,
+        ),
+      );
+    } else if (!kIsWeb && _imageFile != null) {
+      // عرض الصورة في تطبيقات الموبايل
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.file(
+          _imageFile!,
+          fit: BoxFit.cover,
+          width: double.infinity,
+        ),
+      );
+    } else {
+      // عرض أيقونة إضافة صورة
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.add_a_photo,
+            size: 50,
+            color: Theme.of(context).primaryColor,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tap to add product image',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ],
+      );
+    }
   }
 }

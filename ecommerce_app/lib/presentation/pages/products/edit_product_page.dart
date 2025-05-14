@@ -1,6 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -22,18 +23,36 @@ class _EditProductPageState extends State<EditProductPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+
+  // تغيير متغيرات الصورة
   File? _imageFile;
+  Uint8List? _imageBytes;
   String? _imageData;
+
   final _imagePicker = ImagePicker();
+  late Product _product;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Get product from arguments
-    final product = ModalRoute.of(context)!.settings.arguments as Product;
-    _titleController.text = product.title;
-    _descriptionController.text = product.description;
-    _imageData = product.imageData;
+    // الحصول على المنتج من المعاملات
+    _product = ModalRoute.of(context)!.settings.arguments as Product;
+    _titleController.text = _product.title;
+    _descriptionController.text = _product.description;
+    _imageData = _product.imageData;
+
+    // إذا كان هناك بيانات صورة، حاول فك ترميزها إلى Uint8List للاستخدام في الويب
+    if (_imageData != null && _imageData!.isNotEmpty) {
+      try {
+        final String base64Image = _imageData!.replaceFirst(
+          RegExp(r'data:image/\w+;base64,'),
+          '',
+        );
+        _imageBytes = base64Decode(base64Image);
+      } catch (e) {
+        print('Error decoding image: $e');
+      }
+    }
   }
 
   @override
@@ -47,46 +66,71 @@ class _EditProductPageState extends State<EditProductPage> {
     final pickedFile = await _imagePicker.pickImage(
       source: ImageSource.gallery,
     );
+
     if (pickedFile != null) {
       setState(() {
-        _imageFile = File(pickedFile.path);
-        _imageData =
-            null; // Clear the base64 image once a new image is selected
+        if (kIsWeb) {
+          // في حالة الويب، نحتاج إلى قراءة الصورة كـ bytes
+          pickedFile.readAsBytes().then((value) {
+            setState(() {
+              _imageBytes = value;
+              _imageData = null; // إزالة الصورة السابقة عند اختيار صورة جديدة
+            });
+          });
+        } else {
+          // في حالة تطبيقات الموبايل
+          _imageFile = File(pickedFile.path);
+          _imageData = null; // إزالة الصورة السابقة عند اختيار صورة جديدة
+        }
       });
     }
   }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      if (_imageFile == null && _imageData == null) {
+      if (_imageFile == null && _imageBytes == null && _imageData == null) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Please select an image')));
         return;
       }
 
-      final product = ModalRoute.of(context)!.settings.arguments as Product;
-
-      if (_imageFile != null) {
-        context.read<ProductsBloc>().add(
-          UpdateProductEvent(
-            id: product.id,
-            title: _titleController.text.trim(),
-            description: _descriptionController.text.trim(),
-            imageFile: _imageFile!,
-          ),
-        );
-      } else {
-        // Handle case where image is not changed
-        // In a real app, you would need to implement this differently
-        // depending on your API requirements
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'You need to select a new image to update the product',
+      if (kIsWeb) {
+        if (_imageBytes != null) {
+          context.read<ProductsBloc>().add(
+            UpdateProductWebEvent(
+              id: _product.id,
+              title: _titleController.text.trim(),
+              description: _descriptionController.text.trim(),
+              imageBytes: _imageBytes!,
             ),
-          ),
-        );
+          );
+        } else {
+          // في حالة عدم تغيير الصورة، أخبر المستخدم
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Please select a new image to update the product'),
+            ),
+          );
+        }
+      } else {
+        if (_imageFile != null) {
+          context.read<ProductsBloc>().add(
+            UpdateProductEvent(
+              id: _product.id,
+              title: _titleController.text.trim(),
+              description: _descriptionController.text.trim(),
+              imageFile: _imageFile!,
+            ),
+          );
+        } else {
+          // في حالة عدم تغيير الصورة، أخبر المستخدم
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Please select a new image to update the product'),
+            ),
+          );
+        }
       }
     }
   }
@@ -120,7 +164,7 @@ class _EditProductPageState extends State<EditProductPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Image picker
+                  // مربع اختيار الصورة
                   GestureDetector(
                     onTap: _pickImage,
                     child: Container(
@@ -132,74 +176,12 @@ class _EditProductPageState extends State<EditProductPage> {
                           color: Theme.of(context).dividerColor,
                         ),
                       ),
-                      child:
-                          _imageFile != null
-                              ? ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.file(
-                                  _imageFile!,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                ),
-                              )
-                              : _imageData != null
-                              ? ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.memory(
-                                  // In a real app, you would convert the base64 string to bytes
-                                  // This is a placeholder
-                                  Uint8List(0),
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.image_not_supported,
-                                            size: 50,
-                                            color:
-                                                Theme.of(
-                                                  context,
-                                                ).colorScheme.error,
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            'Unable to load image',
-                                            style:
-                                                Theme.of(
-                                                  context,
-                                                ).textTheme.titleMedium,
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
-                              )
-                              : Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.add_a_photo,
-                                    size: 50,
-                                    color: Theme.of(context).primaryColor,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Tap to change product image',
-                                    style:
-                                        Theme.of(context).textTheme.titleMedium,
-                                  ),
-                                ],
-                              ),
+                      child: _getImageWidget(),
                     ),
                   ),
                   const SizedBox(height: 24),
 
-                  // Title field
+                  // حقل العنوان
                   TextFormField(
                     controller: _titleController,
                     decoration: InputDecoration(
@@ -215,7 +197,7 @@ class _EditProductPageState extends State<EditProductPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Description field
+                  // حقل الوصف
                   TextFormField(
                     controller: _descriptionController,
                     maxLines: 5,
@@ -233,7 +215,7 @@ class _EditProductPageState extends State<EditProductPage> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Submit button
+                  // زر الإرسال
                   ElevatedButton(
                     onPressed: _submitForm,
                     child: Padding(
@@ -249,6 +231,117 @@ class _EditProductPageState extends State<EditProductPage> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  // دالة مساعدة لعرض الصورة بناءً على البيئة
+  Widget _getImageWidget() {
+    if (kIsWeb) {
+      if (_imageBytes != null) {
+        // عرض الصورة الجديدة المختارة في الويب
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.memory(
+            _imageBytes!,
+            fit: BoxFit.cover,
+            width: double.infinity,
+          ),
+        );
+      } else if (_imageData != null && _imageData!.isNotEmpty) {
+        // عرض الصورة الموجودة مسبقًا في الويب
+        try {
+          final String base64Image = _imageData!.replaceFirst(
+            RegExp(r'data:image/\w+;base64,'),
+            '',
+          );
+          final imageBytes = base64Decode(base64Image);
+
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.memory(
+              imageBytes,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              errorBuilder: (context, error, stackTrace) {
+                return _buildErrorImage();
+              },
+            ),
+          );
+        } catch (e) {
+          return _buildErrorImage();
+        }
+      }
+    } else {
+      // عرض الصورة في تطبيقات الموبايل
+      if (_imageFile != null) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.file(
+            _imageFile!,
+            fit: BoxFit.cover,
+            width: double.infinity,
+          ),
+        );
+      } else if (_imageData != null && _imageData!.isNotEmpty) {
+        try {
+          final String base64Image = _imageData!.replaceFirst(
+            RegExp(r'data:image/\w+;base64,'),
+            '',
+          );
+          final imageBytes = base64Decode(base64Image);
+
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.memory(
+              imageBytes,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              errorBuilder: (context, error, stackTrace) {
+                return _buildErrorImage();
+              },
+            ),
+          );
+        } catch (e) {
+          return _buildErrorImage();
+        }
+      }
+    }
+
+    // عرض أيقونة إضافة صورة إذا لم تكن هناك صورة
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.add_a_photo,
+          size: 50,
+          color: Theme.of(context).primaryColor,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Tap to change product image',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildErrorImage() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.image_not_supported,
+            size: 50,
+            color: Theme.of(context).colorScheme.error,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Unable to load image',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ],
       ),
     );
   }
