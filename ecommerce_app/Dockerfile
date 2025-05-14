@@ -1,48 +1,46 @@
-# Dockerfile لتطبيق Flutter Web
-FROM ubuntu:20.04 as builder
+# Stage 1: Build the Flutter web app
+FROM ubuntu:20.04 as build
 
-# تعيين منطقة زمنية لتجنب موجه التفاعل
-ENV TZ=Africa/Cairo
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-# تثبيت الاعتماديات اللازمة
+# Install tools and dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     git \
     unzip \
     xz-utils \
     libglu1-mesa \
-    && rm -rf /var/lib/apt/lists/*
+    openjdk-8-jdk
 
-# تثبيت Flutter
-ENV FLUTTER_ROOT=/flutter
-RUN git clone https://github.com/flutter/flutter.git $FLUTTER_ROOT
-ENV PATH="$FLUTTER_ROOT/bin:$PATH"
+# Set variables
+ENV FLUTTER_HOME=/usr/local/flutter
+ENV PATH=$FLUTTER_HOME/bin:$PATH
 
-# تهيئة Flutter وتمكين الويب
-RUN flutter channel stable && \
-    flutter upgrade && \
-    flutter config --enable-web
+# Download Flutter SDK
+RUN git clone https://github.com/flutter/flutter.git $FLUTTER_HOME
+RUN flutter channel stable
+RUN flutter upgrade
+RUN flutter config --enable-web
 
-# نسخ تطبيق Flutter وتثبيت التبعيات
+# Copy Flutter project
 WORKDIR /app
-COPY pubspec.* ./
-RUN flutter pub get
 COPY . .
 
-# تحديث ملف api_constants.dart ليشير إلى خدمة الباكند
-RUN sed -i 's|http://localhost:5163|http://backend:5163|g' lib/core/constants/api_constants.dart
+# Get dependencies
+RUN flutter pub get
 
-# بناء تطبيق الويب
+# Build the project for web
 RUN flutter build web --release
 
-# استخدام Nginx لخدمة الملفات الثابتة
+# Stage 2: Create a lightweight web server to serve the app
 FROM nginx:alpine
-COPY --from=builder /app/build/web /usr/share/nginx/html
 
-# تكوين Nginx
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy the build output from previous stage
+COPY --from=build /app/build/web /usr/share/nginx/html
 
+# Copy Nginx configuration (if custom config is needed)
+# COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port 80
 EXPOSE 80
 
+# Start Nginx server
 CMD ["nginx", "-g", "daemon off;"]
