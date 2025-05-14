@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./loginPage
+      dockerfile: Dockerfile
+    container_name: ecommerce-backend
+    ports:
+      - "5163:5163"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+    networks:
+      - ecommerce-network
+    # إذا كنت تستخدم قاعدة بيانات، أضف تبعية هنا
+    # depends_on:
+    #   - db
+
+  frontend:
+    build:
+      context: ./advanced_os_app
+      dockerfile: Dockerfile
+    container_name: ecommerce-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - ecommerce-network
+
+networks:
+  ecommerce-network:
+    driver: bridge

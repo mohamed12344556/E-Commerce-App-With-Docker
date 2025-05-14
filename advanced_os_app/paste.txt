@@ -1,0 +1,3357 @@
+# Project Structure
+
+```
+lib/
+├── main.dart
+├── app.dart
+├── config/
+│   ├── app_routes.dart
+│   └── app_themes.dart
+├── core/
+│   ├── constants/
+│   │   ├── api_constants.dart
+│   │   └── app_constants.dart
+│   ├── errors/
+│   │   └── exceptions.dart
+│   └── utils/
+│       ├── dialogs.dart
+│       └── validators.dart
+├── data/
+│   ├── datasources/
+│   │   ├── auth_remote_datasource.dart
+│   │   └── product_remote_datasource.dart
+│   ├── models/
+│   │   ├── user_model.dart
+│   │   └── product_model.dart
+│   └── repositories/
+│       ├── auth_repository_impl.dart
+│       └── product_repository_impl.dart
+├── domain/
+│   ├── entities/
+│   │   ├── user.dart
+│   │   └── product.dart
+│   ├── repositories/
+│   │   ├── auth_repository.dart
+│   │   └── product_repository.dart
+│   └── usecases/
+│       ├── auth/
+│       │   ├── login.dart
+│       │   ├── register.dart
+│       │   └── update_profile.dart
+│       └── products/
+│           ├── add_product.dart
+│           ├── delete_product.dart
+│           ├── get_products.dart
+│           └── update_product.dart
+├── presentation/
+│   ├── bloc/
+│   │   ├── auth/
+│   │   │   ├── auth_bloc.dart
+│   │   │   ├── auth_event.dart
+│   │   │   └── auth_state.dart
+│   │   └── products/
+│   │       ├── products_bloc.dart
+│   │       ├── products_event.dart
+│   │       └── products_state.dart
+│   ├── pages/
+│   │   ├── auth/
+│   │   │   ├── login_page.dart
+│   │   │   └── register_page.dart
+│   │   ├── profile/
+│   │   │   ├── profile_page.dart
+│   │   │   └── edit_profile_page.dart
+│   │   └── products/
+│   │       ├── products_page.dart
+│   │       ├── add_product_page.dart
+│   │       └── edit_product_page.dart
+│   └── widgets/
+│       ├── common/
+│       │   ├── app_bar.dart
+│       │   ├── loading_indicator.dart
+│       │   └── error_widget.dart
+│       ├── auth/
+│       │   └── auth_form.dart
+│       └── products/
+│           └── product_card.dart
+└── services/
+    └── network/
+        ├── api_client.dart
+        ├── interceptors/
+        │   ├── auth_interceptor.dart
+        │   └── logging_interceptor.dart
+        └── api_endpoints.dart
+```
+
+# Core Files Implementation
+
+## lib/main.dart
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'app.dart';
+import 'services/network/api_client.dart';
+import 'data/repositories/auth_repository_impl.dart';
+import 'data/repositories/product_repository_impl.dart';
+import 'data/datasources/auth_remote_datasource.dart';
+import 'data/datasources/product_remote_datasource.dart';
+import 'presentation/bloc/auth/auth_bloc.dart';
+import 'presentation/bloc/products/products_bloc.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize API client
+  final apiClient = ApiClient();
+  
+  // Initialize data sources
+  final authDataSource = AuthRemoteDataSource(apiClient);
+  final productDataSource = ProductRemoteDataSource(apiClient);
+  
+  // Initialize repositories
+  final authRepository = AuthRepositoryImpl(authDataSource);
+  final productRepository = ProductRepositoryImpl(productDataSource);
+  
+  // Run the app with repositories
+  runApp(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthBloc>(
+          create: (context) => AuthBloc(
+            authRepository: authRepository,
+          ),
+        ),
+        BlocProvider<ProductsBloc>(
+          create: (context) => ProductsBloc(
+            productRepository: productRepository,
+          ),
+        ),
+      ],
+      child: EcommerceApp(),
+    ),
+  );
+}
+```
+
+## lib/app.dart
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'config/app_routes.dart';
+import 'config/app_themes.dart';
+import 'presentation/bloc/auth/auth_bloc.dart';
+import 'presentation/bloc/auth/auth_state.dart';
+import 'presentation/pages/auth/login_page.dart';
+import 'presentation/pages/products/products_page.dart';
+
+class EcommerceApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'E-commerce App',
+      theme: AppThemes.lightTheme,
+      darkTheme: AppThemes.darkTheme,
+      themeMode: ThemeMode.system,
+      routes: AppRoutes.routes,
+      home: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) {
+          if (state is Authenticated) {
+            return ProductsPage();
+          }
+          return LoginPage();
+        },
+      ),
+    );
+  }
+}
+```
+
+## lib/config/app_routes.dart
+```dart
+import 'package:flutter/material.dart';
+import '../presentation/pages/auth/login_page.dart';
+import '../presentation/pages/auth/register_page.dart';
+import '../presentation/pages/profile/profile_page.dart';
+import '../presentation/pages/profile/edit_profile_page.dart';
+import '../presentation/pages/products/products_page.dart';
+import '../presentation/pages/products/add_product_page.dart';
+import '../presentation/pages/products/edit_product_page.dart';
+
+class AppRoutes {
+  static const String login = '/login';
+  static const String register = '/register';
+  static const String profile = '/profile';
+  static const String editProfile = '/profile/edit';
+  static const String products = '/products';
+  static const String addProduct = '/products/add';
+  static const String editProduct = '/products/edit';
+
+  static Map<String, WidgetBuilder> get routes => {
+        login: (context) => LoginPage(),
+        register: (context) => RegisterPage(),
+        profile: (context) => ProfilePage(),
+        editProfile: (context) => EditProfilePage(),
+        products: (context) => ProductsPage(),
+        addProduct: (context) => AddProductPage(),
+        editProduct: (context) => EditProductPage(),
+      };
+}
+```
+
+## lib/config/app_themes.dart
+```dart
+import 'package:flutter/material.dart';
+
+class AppColors {
+  // Primary colors
+  static const primaryColor = Color(0xFF4CAF50);
+  static const primaryLightColor = Color(0xFF80E27E);
+  static const primaryDarkColor = Color(0xFF087F23);
+  
+  // Secondary colors
+  static const secondaryColor = Color(0xFF03A9F4);
+  static const secondaryLightColor = Color(0xFF67DAFF);
+  static const secondaryDarkColor = Color(0xFF007AC1);
+  
+  // Feedback colors
+  static const errorColor = Color(0xFFF44336);
+  static const successColor = Color(0xFF4CAF50);
+  static const warningColor = Color(0xFFFFEB3B);
+  static const infoColor = Color(0xFF2196F3);
+  
+  // Neutral colors
+  static const backgroundColor = Color(0xFFF5F5F5);
+  static const surfaceColor = Colors.white;
+  static const cardColor = Colors.white;
+  
+  // Text colors
+  static const textPrimaryColor = Color(0xFF212121);
+  static const textSecondaryColor = Color(0xFF757575);
+  static const textDisabledColor = Color(0xFFBDBDBD);
+  
+  // Border colors
+  static const borderColor = Color(0xFFE0E0E0);
+  static const dividerColor = Color(0xFFEEEEEE);
+}
+
+class AppTextStyles {
+  static const headline1 = TextStyle(
+    fontSize: 32.0,
+    fontWeight: FontWeight.bold,
+    color: AppColors.textPrimaryColor,
+  );
+  
+  static const headline2 = TextStyle(
+    fontSize: 24.0,
+    fontWeight: FontWeight.bold,
+    color: AppColors.textPrimaryColor,
+  );
+  
+  static const headline3 = TextStyle(
+    fontSize: 20.0,
+    fontWeight: FontWeight.bold,
+    color: AppColors.textPrimaryColor,
+  );
+  
+  static const subtitle1 = TextStyle(
+    fontSize: 18.0,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textPrimaryColor,
+  );
+  
+  static const subtitle2 = TextStyle(
+    fontSize: 16.0,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textPrimaryColor,
+  );
+  
+  static const bodyText1 = TextStyle(
+    fontSize: 16.0,
+    fontWeight: FontWeight.normal,
+    color: AppColors.textPrimaryColor,
+  );
+  
+  static const bodyText2 = TextStyle(
+    fontSize: 14.0,
+    fontWeight: FontWeight.normal,
+    color: AppColors.textPrimaryColor,
+  );
+  
+  static const button = TextStyle(
+    fontSize: 16.0,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
+  );
+  
+  static const caption = TextStyle(
+    fontSize: 12.0,
+    fontWeight: FontWeight.normal,
+    color: AppColors.textSecondaryColor,
+  );
+}
+
+class AppThemes {
+  static final ThemeData lightTheme = ThemeData(
+    primaryColor: AppColors.primaryColor,
+    primaryColorLight: AppColors.primaryLightColor,
+    primaryColorDark: AppColors.primaryDarkColor,
+    backgroundColor: AppColors.backgroundColor,
+    scaffoldBackgroundColor: AppColors.backgroundColor,
+    cardColor: AppColors.cardColor,
+    errorColor: AppColors.errorColor,
+    dividerColor: AppColors.dividerColor,
+    appBarTheme: AppBarTheme(
+      backgroundColor: AppColors.primaryColor,
+      elevation: 0,
+      iconTheme: IconThemeData(color: Colors.white),
+      titleTextStyle: TextStyle(
+        color: Colors.white,
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        primary: AppColors.primaryColor,
+        onPrimary: Colors.white,
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        textStyle: AppTextStyles.button,
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        primary: AppColors.primaryColor,
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        side: BorderSide(color: AppColors.primaryColor),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        textStyle: AppTextStyles.button.copyWith(color: AppColors.primaryColor),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: AppColors.borderColor),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: AppColors.borderColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: AppColors.errorColor),
+      ),
+      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    ),
+    cardTheme: CardTheme(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+    ),
+    textTheme: TextTheme(
+      headline1: AppTextStyles.headline1,
+      headline2: AppTextStyles.headline2,
+      headline3: AppTextStyles.headline3,
+      subtitle1: AppTextStyles.subtitle1,
+      subtitle2: AppTextStyles.subtitle2,
+      bodyText1: AppTextStyles.bodyText1,
+      bodyText2: AppTextStyles.bodyText2,
+      button: AppTextStyles.button,
+      caption: AppTextStyles.caption,
+    ),
+  );
+
+  static final ThemeData darkTheme = ThemeData(
+    brightness: Brightness.dark,
+    primaryColor: AppColors.primaryColor,
+    primaryColorLight: AppColors.primaryLightColor,
+    primaryColorDark: AppColors.primaryDarkColor,
+    backgroundColor: Color(0xFF121212),
+    scaffoldBackgroundColor: Color(0xFF121212),
+    cardColor: Color(0xFF1E1E1E),
+    errorColor: AppColors.errorColor,
+    dividerColor: Color(0xFF323232),
+    appBarTheme: AppBarTheme(
+      backgroundColor: Color(0xFF1E1E1E),
+      elevation: 0,
+      iconTheme: IconThemeData(color: Colors.white),
+      titleTextStyle: TextStyle(
+        color: Colors.white,
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        primary: AppColors.primaryColor,
+        onPrimary: Colors.white,
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        textStyle: AppTextStyles.button,
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        primary: AppColors.primaryColor,
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        side: BorderSide(color: AppColors.primaryColor),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        textStyle: AppTextStyles.button.copyWith(color: AppColors.primaryColor),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: Color(0xFF2C2C2C),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: Color(0xFF424242)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: Color(0xFF424242)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: AppColors.primaryColor, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: AppColors.errorColor),
+      ),
+      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    ),
+    cardTheme: CardTheme(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+    ),
+    textTheme: TextTheme(
+      headline1: AppTextStyles.headline1.copyWith(color: Colors.white),
+      headline2: AppTextStyles.headline2.copyWith(color: Colors.white),
+      headline3: AppTextStyles.headline3.copyWith(color: Colors.white),
+      subtitle1: AppTextStyles.subtitle1.copyWith(color: Colors.white),
+      subtitle2: AppTextStyles.subtitle2.copyWith(color: Colors.white),
+      bodyText1: AppTextStyles.bodyText1.copyWith(color: Colors.white),
+      bodyText2: AppTextStyles.bodyText2.copyWith(color: Colors.white),
+      button: AppTextStyles.button,
+      caption: AppTextStyles.caption.copyWith(color: Color(0xFFBDBDBD)),
+    ),
+  );
+}
+```
+
+## lib/core/constants/api_constants.dart
+```dart
+class ApiConstants {
+  // Base URL
+  static const String baseUrl = 'http://localhost:5163'; // Should be changed to your real server URL in production
+  
+  // Authentication endpoints
+  static const String login = '/api/Account/Login';
+  static const String register = '/api/Account/Register';
+  static const String updateUser = '/api/Account/UpdateUser';
+  
+  // Product endpoints
+  static const String addItem = '/api/Item/AddItem';
+  static const String getItems = '/api/Item/GetItems';
+  static const String updateItem = '/api/Item/UpdateItem';
+  static const String deleteItem = '/api/Item/DeleteItem';
+}
+```
+
+# Network Services
+
+## lib/services/network/api_client.dart
+```dart
+import 'dart:convert';
+import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import '../../core/constants/api_constants.dart';
+import 'interceptors/auth_interceptor.dart';
+import 'interceptors/logging_interceptor.dart';
+
+class ApiClient {
+  late final Dio _dio;
+  
+  ApiClient() {
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: ApiConstants.baseUrl,
+        connectTimeout: 15000,
+        receiveTimeout: 15000,
+        responseType: ResponseType.json,
+      ),
+    );
+    
+    // Add interceptors
+    _dio.interceptors.add(AuthInterceptor());
+    _dio.interceptors.add(LoggingInterceptor());
+  }
+  
+  // GET request
+  Future<dynamic> get(String endpoint, {Map<String, dynamic>? queryParameters}) async {
+    try {
+      final response = await _dio.get(
+        endpoint,
+        queryParameters: queryParameters,
+      );
+      return response.data;
+    } on DioError catch (e) {
+      _handleError(e);
+    }
+  }
+  
+  // POST request
+  Future<dynamic> post(String endpoint, {dynamic data}) async {
+    try {
+      final response = await _dio.post(
+        endpoint,
+        data: data,
+      );
+      return response.data;
+    } on DioError catch (e) {
+      _handleError(e);
+    }
+  }
+  
+  // POST request with multipart data (for file upload)
+  Future<dynamic> postMultipart(String endpoint, {required Map<String, dynamic> fields, required Map<String, File> files}) async {
+    try {
+      final formData = FormData();
+      
+      // Add text fields
+      fields.forEach((key, value) {
+        formData.fields.add(MapEntry(key, value.toString()));
+      });
+      
+      // Add files
+      for (var entry in files.entries) {
+        final file = entry.value;
+        final fileName = file.path.split('/').last;
+        formData.files.add(
+          MapEntry(
+            entry.key,
+            await MultipartFile.fromFile(
+              file.path,
+              filename: fileName,
+            ),
+          ),
+        );
+      }
+      
+      final response = await _dio.post(
+        endpoint,
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+        ),
+      );
+      
+      return response.data;
+    } on DioError catch (e) {
+      _handleError(e);
+    }
+  }
+  
+  // PUT request
+  Future<dynamic> put(String endpoint, {dynamic data}) async {
+    try {
+      final response = await _dio.put(
+        endpoint,
+        data: data,
+      );
+      return response.data;
+    } on DioError catch (e) {
+      _handleError(e);
+    }
+  }
+  
+  // PUT request with multipart data (for file upload)
+  Future<dynamic> putMultipart(String endpoint, {required Map<String, dynamic> fields, required Map<String, File> files}) async {
+    try {
+      final formData = FormData();
+      
+      // Add text fields
+      fields.forEach((key, value) {
+        formData.fields.add(MapEntry(key, value.toString()));
+      });
+      
+      // Add files
+      for (var entry in files.entries) {
+        final file = entry.value;
+        final fileName = file.path.split('/').last;
+        formData.files.add(
+          MapEntry(
+            entry.key,
+            await MultipartFile.fromFile(
+              file.path,
+              filename: fileName,
+            ),
+          ),
+        );
+      }
+      
+      final response = await _dio.put(
+        endpoint,
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+        ),
+      );
+      
+      return response.data;
+    } on DioError catch (e) {
+      _handleError(e);
+    }
+  }
+  
+  // DELETE request
+  Future<dynamic> delete(String endpoint, {dynamic data}) async {
+    try {
+      final response = await _dio.delete(
+        endpoint,
+        data: data,
+      );
+      return response.data;
+    } on DioError catch (e) {
+      _handleError(e);
+    }
+  }
+  
+  // Handle DioError exceptions
+  void _handleError(DioError e) {
+    switch (e.type) {
+      case DioErrorType.connectTimeout:
+      case DioErrorType.sendTimeout:
+      case DioErrorType.receiveTimeout:
+        throw Exception('Connection timeout. Please check your internet connection.');
+      case DioErrorType.response:
+        final int? statusCode = e.response?.statusCode;
+        String message = 'Something went wrong. Please try again later.';
+        
+        if (e.response?.data != null && e.response?.data is Map<String, dynamic>) {
+          final Map<String, dynamic> responseData = e.response?.data;
+          if (responseData.containsKey('message')) {
+            message = responseData['message'];
+          } else if (responseData.containsKey('error')) {
+            message = responseData['error'];
+          }
+        }
+        
+        switch (statusCode) {
+          case 400:
+            throw Exception('Bad request: $message');
+          case 401:
+            throw Exception('Unauthorized: $message');
+          case 403:
+            throw Exception('Forbidden: $message');
+          case 404:
+            throw Exception('Not found: $message');
+          case 500:
+            throw Exception('Server error: $message');
+          default:
+            throw Exception('Error occurred: $message');
+        }
+      case DioErrorType.cancel:
+        throw Exception('Request was cancelled');
+      case DioErrorType.other:
+        throw Exception('Network error. Please check your internet connection.');
+      default:
+        throw Exception('Something went wrong. Please try again later.');
+    }
+  }
+}
+```
+
+## lib/services/network/interceptors/auth_interceptor.dart
+```dart
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class AuthInterceptor extends Interceptor {
+  @override
+  Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    
+    if (token != null && token.isNotEmpty) {
+      options.headers['Authorization'] = 'Bearer $token';
+    }
+    
+    return super.onRequest(options, handler);
+  }
+  
+  @override
+  Future<void> onResponse(Response response, ResponseInterceptorHandler handler) async {
+    if (response.statusCode == 200 && 
+        response.data is Map<String, dynamic> && 
+        response.data.containsKey('token')) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('auth_token', response.data['token']);
+    }
+    
+    return super.onResponse(response, handler);
+  }
+}
+```
+
+## lib/services/network/interceptors/logging_interceptor.dart
+```dart
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+
+class LoggingInterceptor extends Interceptor {
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    if (kDebugMode) {
+      print('REQUEST[${options.method}] => PATH: ${options.path}');
+      print('Headers:');
+      options.headers.forEach((k, v) => print('$k: $v'));
+      print('QueryParameters:');
+      options.queryParameters.forEach((k, v) => print('$k: $v'));
+      if (options.data != null) {
+        print('Body: ${options.data}');
+      }
+    }
+    super.onRequest(options, handler);
+  }
+
+  @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
+    if (kDebugMode) {
+      print('RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions.path}');
+      print('Response: ${response.data}');
+    }
+    super.onResponse(response, handler);
+  }
+
+  @override
+  void onError(DioError err, ErrorInterceptorHandler handler) {
+    if (kDebugMode) {
+      print('ERROR[${err.response?.statusCode}] => PATH: ${err.requestOptions.path}');
+      print('Error: ${err.error}');
+      print('Message: ${err.message}');
+      print('Response: ${err.response?.data}');
+    }
+    super.onError(err, handler);
+  }
+}
+```
+
+# Models and Data Classes
+
+## lib/data/models/user_model.dart
+```dart
+import '../../domain/entities/user.dart';
+
+class UserModel extends User {
+  UserModel({
+    required String userName,
+    required String email,
+    required String phoneNumber,
+  }) : super(
+    userName: userName,
+    email: email,
+    phoneNumber: phoneNumber,
+  );
+  
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      userName: json['userName'] ?? '',
+      email: json['email'] ?? '',
+      phoneNumber: json['phoneNumber'] ?? '',
+    );
+  }
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'userName': userName,
+      'email': email,
+      'phoneNumber': phoneNumber,
+    };
+  }
+  
+  // For registration
+  Map<String, dynamic> toRegistrationJson(String password) {
+    return {
+      'userName': userName,
+      'email': email,
+      'password': password,
+      'phoneNumber': phoneNumber,
+    };
+  }
+  
+  // For login
+  Map<String, dynamic> toLoginJson(String password) {
+    return {
+      'email': email,
+      'password': password,
+    };
+  }
+  
+  // For profile update
+  Map<String, dynamic> toUpdateJson() {
+    return {
+      'name': userName,
+      'PhoneNum': phoneNumber,
+    };
+  }
+}
+```
+
+## lib/domain/entities/user.dart
+```dart
+class User {
+  final String userName;
+  final String email;
+  final String phoneNumber;
+  
+  User({
+    required this.userName,
+    required this.email,
+    required this.phoneNumber,
+  });
+}
+```
+
+## lib/data/models/product_model.dart
+```dart
+import 'dart:convert';
+import 'dart:io';
+import '../../domain/entities/product.dart';
+
+class ProductModel extends Product {
+  ProductModel({
+    required String id,
+    required String title,
+    required String description,
+    required String imageData,
+  }) : super(
+    id: id,
+    title: title,
+    description: description,
+    imageData: imageData,
+  );
+  
+  factory ProductModel.fromJson(Map<String, dynamic> json) {
+    return ProductModel(
+      id: json['id'] ?? '',
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      imageData: json['imageData'] ?? '',
+    );
+  }
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'imageData': imageData,
+    };
+  }
+  
+  // For creating a new product with image file
+  static Map<String, dynamic> toAddProductFields({
+    required String title,
+    required String description,
+  }) {
+    return {
+      'Title': title,
+      'Description': description,
+    };
+  }
+  
+  // For updating a product with image file
+  Map<String, dynamic> toUpdateProductFields() {
+    return {
+      'Title': title,
+      'Description': description,
+    };
+  }
+}
+```
+
+## lib/domain/entities/product.dart
+```dart
+class Product {
+  final String id;
+  final String title;
+  final String description;
+  final String imageData;
+  
+  Product({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.imageData,
+  });
+}
+```
+
+# Data Sources
+
+## lib/data/datasources/auth_remote_datasource.dart
+```dart
+import '../../services/network/api_client.dart';
+import '../../core/constants/api_constants.dart';
+import '../models/user_model.dart';
+
+class AuthRemoteDataSource {
+  final ApiClient _apiClient;
+  
+  AuthRemoteDataSource(this._apiClient);
+  
+  Future<Map<String, dynamic>> register(UserModel user, String password) async {
+    final response = await _apiClient.post(
+      ApiConstants.register,
+      data: user.toRegistrationJson(password),
+    );
+    
+    return response;
+  }
+  
+  Future<Map<String, dynamic>> login(String email, String password) async {
+    final response = await _apiClient.post(
+      ApiConstants.login,
+      data: {
+        'email': email,
+        'password': password,
+      },
+    );
+    
+    return response;
+  }
+  
+  Future<Map<String, dynamic>> updateProfile(String name, String phoneNumber) async {
+    final queryParams = {
+      'name': name,
+      'PhoneNum': phoneNumber,
+    };
+    
+    final response = await _apiClient.put(
+      ApiConstants.updateUser,
+      data: queryParams,
+    );
+    
+    return response;
+  }
+}
+```
+
+## lib/data/datasources/product_remote_datasource.dart
+```dart
+import 'dart:io';
+import '../../services/network/api_client.dart';
+import '../../core/constants/api_constants.dart';
+import '../models/product_model.dart';
+
+class ProductRemoteDataSource {
+  final ApiClient _apiClient;
+  
+  ProductRemoteDataSource(this._apiClient);
+  
+  Future<List<ProductModel>> getProducts() async {
+    final response = await _apiClient.get(ApiConstants.getItems);
+    
+    if (response is List) {
+      return response.map((item) => ProductModel.fromJson(item)).toList();
+    } else {
+      throw Exception('Failed to parse products data');
+    }
+  }
+  
+  Future<ProductModel> addProduct({
+    required String title,
+    required String description,
+    required File imageFile,
+  }) async {
+    final fields = ProductModel.toAddProductFields(
+      title: title,
+      description: description,
+    );
+    
+    final files = {
+      'ImageData': imageFile,
+    };
+    
+    final response = await _apiClient.postMultipart(
+      ApiConstants.addItem,
+      fields: fields,
+      files: files,
+    );
+    
+    return ProductModel.fromJson(response);
+  }
+  
+  Future<ProductModel> updateProduct({
+    required String id,
+    required String title,
+    required String description,
+    required File imageFile,
+  }) async {
+    final fields = {
+      'Title': title,
+      'Description': description,
+    };
+    
+    final files = {
+      'ImageData': imageFile,
+    };
+    
+    final response = await _apiClient.putMultipart(
+      '${ApiConstants.updateItem}/$id',
+      fields: fields,
+      files: files,
+    );
+    
+    return ProductModel.fromJson(response);
+  }
+  
+  Future<String> deleteProduct(String id) async {
+    final response = await _apiClient.delete('${ApiConstants.deleteItem}/$id');
+    return response.toString();
+  }
+}
+```
+
+# Repositories
+
+## lib/domain/repositories/auth_repository.dart
+```dart
+import '../entities/user.dart';
+
+abstract class AuthRepository {
+  Future<bool> register(String username, String email, String password, String phoneNumber);
+  Future<Map<String, dynamic>> login(String email, String password);
+  Future<bool> updateProfile(String name, String phoneNumber);
+}
+```
+
+## lib/data/repositories/auth_repository_impl.dart
+```dart
+import '../../domain/repositories/auth_repository.dart';
+import '../datasources/auth_remote_datasource.dart';
+import '../models/user_model.dart';
+
+class AuthRepositoryImpl implements AuthRepository {
+  final AuthRemoteDataSource _authRemoteDataSource;
+  
+  AuthRepositoryImpl(this._authRemoteDataSource);
+  
+  @override
+  Future<bool> register(String username, String email, String password, String phoneNumber) async {
+    try {
+      final user = UserModel(
+        userName: username,
+        email: email,
+        phoneNumber: phoneNumber,
+      );
+      
+      await _authRemoteDataSource.register(user, password);
+      return true;
+    } catch (e) {
+      print('Registration error: $e');
+      return false;
+    }
+  }
+  
+  @override
+  Future<Map<String, dynamic>> login(String email, String password) async {
+    try {
+      final response = await _authRemoteDataSource.login(email, password);
+      return response;
+    } catch (e) {
+      print('Login error: $e');
+      rethrow;
+    }
+  }
+  
+  @override
+  Future<bool> updateProfile(String name, String phoneNumber) async {
+    try {
+      await _authRemoteDataSource.updateProfile(name, phoneNumber);
+      return true;
+    } catch (e) {
+      print('Update profile error: $e');
+      return false;
+    }
+  }
+}
+```
+
+## lib/domain/repositories/product_repository.dart
+```dart
+import 'dart:io';
+import '../entities/product.dart';
+
+abstract class ProductRepository {
+  Future<List<Product>> getProducts();
+  Future<Product> addProduct(String title, String description, File imageFile);
+  Future<Product> updateProduct(String id, String title, String description, File imageFile);
+  Future<bool> deleteProduct(String id);
+}
+```
+
+## lib/data/repositories/product_repository_impl.dart
+```dart
+import 'dart:io';
+import '../../domain/entities/product.dart';
+import '../../domain/repositories/product_repository.dart';
+import '../datasources/product_remote_datasource.dart';
+
+class ProductRepositoryImpl implements ProductRepository {
+  final ProductRemoteDataSource _productRemoteDataSource;
+  
+  ProductRepositoryImpl(this._productRemoteDataSource);
+  
+  @override
+  Future<List<Product>> getProducts() async {
+    try {
+      final products = await _productRemoteDataSource.getProducts();
+      return products;
+    } catch (e) {
+      print('Get products error: $e');
+      rethrow;
+    }
+  }
+  
+  @override
+  Future<Product> addProduct(String title, String description, File imageFile) async {
+    try {
+      final product = await _productRemoteDataSource.addProduct(
+        title: title,
+        description: description,
+        imageFile: imageFile,
+      );
+      return product;
+    } catch (e) {
+      print('Add product error: $e');
+      rethrow;
+    }
+  }
+  
+  @override
+  Future<Product> updateProduct(String id, String title, String description, File imageFile) async {
+    try {
+      final product = await _productRemoteDataSource.updateProduct(
+        id: id,
+        title: title,
+        description: description,
+        imageFile: imageFile,
+      );
+      return product;
+    } catch (e) {
+      print('Update product error: $e');
+      rethrow;
+    }
+  }
+  
+  @override
+  Future<bool> deleteProduct(String id) async {
+    try {
+      await _productRemoteDataSource.deleteProduct(id);
+      return true;
+    } catch (e) {
+      print('Delete product error: $e');
+      return false;
+    }
+  }
+}
+```
+
+# BLoC Implementation
+
+## lib/presentation/bloc/auth/auth_event.dart
+```dart
+import 'package:equatable/equatable.dart';
+
+abstract class AuthEvent extends Equatable {
+  @override
+  List<Object?> get props => [];
+}
+
+class RegisterEvent extends AuthEvent {
+  final String username;
+  final String email;
+  final String password;
+  final String phoneNumber;
+  
+  RegisterEvent({
+    required this.username,
+    required this.email,
+    required this.password,
+    required this.phoneNumber,
+  });
+  
+  @override
+  List<Object?> get props => [username, email, password, phoneNumber];
+}
+
+class LoginEvent extends AuthEvent {
+  final String email;
+  final String password;
+  
+  LoginEvent({
+    required this.email,
+    required this.password,
+  });
+  
+  @override
+  List<Object?> get props => [email, password];
+}
+
+class UpdateProfileEvent extends AuthEvent {
+  final String name;
+  final String phoneNumber;
+  
+  UpdateProfileEvent({
+    required this.name,
+    required this.phoneNumber,
+  });
+  
+  @override
+  List<Object?> get props => [name, phoneNumber];
+}
+
+class LogoutEvent extends AuthEvent {}
+```
+
+## lib/presentation/bloc/auth/auth_state.dart
+```dart
+import 'package:equatable/equatable.dart';
+import '../../../domain/entities/user.dart';
+
+abstract class AuthState extends Equatable {
+  @override
+  List<Object?> get props => [];
+}
+
+class AuthInitial extends AuthState {}
+
+class Authenticating extends AuthState {}
+
+class Authenticated extends AuthState {
+  final String token;
+  final String expiration;
+  
+  Authenticated({
+    required this.token,
+    required this.expiration,
+  });
+  
+  @override
+  List<Object?> get props => [token, expiration];
+}
+
+class AuthenticationFailed extends AuthState {
+  final String message;
+  
+  AuthenticationFailed(this.message);
+  
+  @override
+  List<Object?> get props => [message];
+}
+
+class RegistrationSuccess extends AuthState {}
+
+class RegistrationFailed extends AuthState {
+  final String message;
+  
+  RegistrationFailed(this.message);
+  
+  @override
+  List<Object?> get props => [message];
+}
+
+class ProfileUpdateSuccess extends AuthState {}
+
+class ProfileUpdateFailed extends AuthState {
+  final String message;
+  
+  ProfileUpdateFailed(this.message);
+  
+  @override
+  List<Object?> get props => [message];
+}
+
+class LoggedOut extends AuthState {}
+```
+
+## lib/presentation/bloc/auth/auth_bloc.dart
+```dart
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../domain/repositories/auth_repository.dart';
+import 'auth_event.dart';
+import 'auth_state.dart';
+
+class AuthBloc extends Bloc<AuthEvent, AuthState> {
+  final AuthRepository authRepository;
+  
+  AuthBloc({required this.authRepository}) : super(AuthInitial()) {
+    on<RegisterEvent>(_onRegister);
+    on<LoginEvent>(_onLogin);
+    on<UpdateProfileEvent>(_onUpdateProfile);
+    on<LogoutEvent>(_onLogout);
+    
+    // Check if user is already logged in
+    _checkAuthStatus();
+  }
+  
+  Future<void> _checkAuthStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    final expiration = prefs.getString('token_expiration');
+    
+    if (token != null && expiration != null) {
+      // Check if token is still valid
+      final expirationDate = DateTime.parse(expiration);
+      if (expirationDate.isAfter(DateTime.now())) {
+        emit(Authenticated(token: token, expiration: expiration));
+      } else {
+        // Token expired, clear and logout
+        await _clearAuthData();
+        emit(LoggedOut());
+      }
+    }
+  }
+  
+  Future<void> _onRegister(RegisterEvent event, Emitter<AuthState> emit) async {
+    emit(Authenticating());
+    
+    try {
+      final success = await authRepository.register(
+        event.username,
+        event.email,
+        event.password,
+        event.phoneNumber,
+      );
+      
+      if (success) {
+        emit(RegistrationSuccess());
+      } else {
+        emit(RegistrationFailed('Registration failed. Please try again.'));
+      }
+    } catch (e) {
+      emit(RegistrationFailed(e.toString()));
+    }
+  }
+  
+  Future<void> _onLogin(LoginEvent event, Emitter<AuthState> emit) async {
+    emit(Authenticating());
+    
+    try {
+      final response = await authRepository.login(
+        event.email,
+        event.password,
+      );
+      
+      if (response.containsKey('token') && response.containsKey('expiration')) {
+        final token = response['token'];
+        final expiration = response['expiration'];
+        
+        // Save token and expiration
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_token', token);
+        await prefs.setString('token_expiration', expiration);
+        
+        emit(Authenticated(token: token, expiration: expiration));
+      } else {
+        emit(AuthenticationFailed('Invalid login response. Please try again.'));
+      }
+    } catch (e) {
+      emit(AuthenticationFailed(e.toString()));
+    }
+  }
+  
+  Future<void> _onUpdateProfile(UpdateProfileEvent event, Emitter<AuthState> emit) async {
+    try {
+      final success = await authRepository.updateProfile(
+        event.name,
+        event.phoneNumber,
+      );
+      
+      if (success) {
+        emit(ProfileUpdateSuccess());
+        
+        // Refresh auth status after profile update
+        _checkAuthStatus();
+      } else {
+        emit(ProfileUpdateFailed('Profile update failed. Please try again.'));
+      }
+    } catch (e) {
+      emit(ProfileUpdateFailed(e.toString()));
+    }
+  }
+  
+  Future<void> _onLogout(LogoutEvent event, Emitter<AuthState> emit) async {
+    await _clearAuthData();
+    emit(LoggedOut());
+  }
+  
+  Future<void> _clearAuthData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+    await prefs.remove('token_expiration');
+  }
+}
+```
+
+## lib/presentation/bloc/products/products_event.dart
+```dart
+import 'dart:io';
+import 'package:equatable/equatable.dart';
+
+abstract class ProductsEvent extends Equatable {
+  @override
+  List<Object?> get props => [];
+}
+
+class FetchProductsEvent extends ProductsEvent {}
+
+class AddProductEvent extends ProductsEvent {
+  final String title;
+  final String description;
+  final File imageFile;
+  
+  AddProductEvent({
+    required this.title,
+    required this.description,
+    required this.imageFile,
+  });
+  
+  @override
+  List<Object?> get props => [title, description, imageFile];
+}
+
+class UpdateProductEvent extends ProductsEvent {
+  final String id;
+  final String title;
+  final String description;
+  final File imageFile;
+  
+  UpdateProductEvent({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.imageFile,
+  });
+  
+  @override
+  List<Object?> get props => [id, title, description, imageFile];
+}
+
+class DeleteProductEvent extends ProductsEvent {
+  final String id;
+  
+  DeleteProductEvent({required this.id});
+  
+  @override
+  List<Object?> get props => [id];
+}
+```
+
+## lib/presentation/bloc/products/products_state.dart
+```dart
+import 'package:equatable/equatable.dart';
+import '../../../domain/entities/product.dart';
+
+abstract class ProductsState extends Equatable {
+  @override
+  List<Object?> get props => [];
+}
+
+class ProductsInitial extends ProductsState {}
+
+class ProductsLoading extends ProductsState {}
+
+class ProductsLoaded extends ProductsState {
+  final List<Product> products;
+  
+  ProductsLoaded(this.products);
+  
+  @override
+  List<Object?> get props => [products];
+}
+
+class ProductsError extends ProductsState {
+  final String message;
+  
+  ProductsError(this.message);
+  
+  @override
+  List<Object?> get props => [message];
+}
+
+class ProductAdded extends ProductsState {
+  final Product product;
+  
+  ProductAdded(this.product);
+  
+  @override
+  List<Object?> get props => [product];
+}
+
+class ProductUpdated extends ProductsState {
+  final Product product;
+  
+  ProductUpdated(this.product);
+  
+  @override
+  List<Object?> get props => [product];
+}
+
+class ProductDeleted extends ProductsState {
+  final String id;
+  
+  ProductDeleted(this.id);
+  
+  @override
+  List<Object?> get props => [id];
+}
+
+class ProductActionFailed extends ProductsState {
+  final String message;
+  
+  ProductActionFailed(this.message);
+  
+  @override
+  List<Object?> get props => [message];
+}
+```
+
+## lib/presentation/bloc/products/products_bloc.dart
+```dart
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../domain/repositories/product_repository.dart';
+import '../../../domain/entities/product.dart';
+import 'products_event.dart';
+import 'products_state.dart';
+
+class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
+  final ProductRepository productRepository;
+  List<Product> _products = [];
+  
+  ProductsBloc({required this.productRepository}) : super(ProductsInitial()) {
+    on<FetchProductsEvent>(_onFetchProducts);
+    on<AddProductEvent>(_onAddProduct);
+    on<UpdateProductEvent>(_onUpdateProduct);
+    on<DeleteProductEvent>(_onDeleteProduct);
+  }
+  
+  Future<void> _onFetchProducts(FetchProductsEvent event, Emitter<ProductsState> emit) async {
+    emit(ProductsLoading());
+    
+    try {
+      _products = await productRepository.getProducts();
+      emit(ProductsLoaded(_products));
+    } catch (e) {
+      emit(ProductsError(e.toString()));
+    }
+  }
+  
+  Future<void> _onAddProduct(AddProductEvent event, Emitter<ProductsState> emit) async {
+    try {
+      final product = await productRepository.addProduct(
+        event.title,
+        event.description,
+        event.imageFile,
+      );
+      
+      _products.add(product);
+      emit(ProductAdded(product));
+      emit(ProductsLoaded(_products));
+    } catch (e) {
+      emit(ProductActionFailed(e.toString()));
+    }
+  }
+  
+  Future<void> _onUpdateProduct(UpdateProductEvent event, Emitter<ProductsState> emit) async {
+    try {
+      final product = await productRepository.updateProduct(
+        event.id,
+        event.title,
+        event.description,
+        event.imageFile,
+      );
+      
+      final index = _products.indexWhere((p) => p.id == product.id);
+      if (index != -1) {
+        _products[index] = product;
+      }
+      
+      emit(ProductUpdated(product));
+      emit(ProductsLoaded(_products));
+    } catch (e) {
+      emit(ProductActionFailed(e.toString()));
+    }
+  }
+  
+  Future<void> _onDeleteProduct(DeleteProductEvent event, Emitter<ProductsState> emit) async {
+    try {
+      final success = await productRepository.deleteProduct(event.id);
+      
+      if (success) {
+        _products.removeWhere((p) => p.id == event.id);
+        emit(ProductDeleted(event.id));
+        emit(ProductsLoaded(_products));
+      } else {
+        emit(ProductActionFailed('Failed to delete product'));
+      }
+    } catch (e) {
+      emit(ProductActionFailed(e.toString()));
+    }
+  }
+}
+```
+
+# UI Pages
+
+## lib/presentation/pages/auth/login_page.dart
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../config/app_routes.dart';
+import '../../../core/utils/validators.dart';
+import '../../bloc/auth/auth_bloc.dart';
+import '../../bloc/auth/auth_event.dart';
+import '../../bloc/auth/auth_state.dart';
+import '../../widgets/common/loading_indicator.dart';
+
+class LoginPage extends StatefulWidget {
+  @override
+  _LoginPageState createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+  
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+  
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscurePassword = !_obscurePassword;
+    });
+  }
+  
+  void _submitForm() {
+    if (_formKey.currentState!.validate()) {
+      context.read<AuthBloc>().add(
+        LoginEvent(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        ),
+      );
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: BlocConsumer<AuthBloc, AuthState>(
+          listener: (context, state) {
+            if (state is AuthenticationFailed) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+            } else if (state is Authenticated) {
+              // Navigate to products page on successful login
+              Navigator.pushReplacementNamed(context, AppRoutes.products);
+            }
+          },
+          builder: (context, state) {
+            if (state is Authenticating) {
+              return Center(child: LoadingIndicator());
+            }
+            
+            return Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // App logo or image
+                      Icon(
+                        Icons.shopping_bag,
+                        size: 80,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      const SizedBox(height: 24),
+                      
+                      // Title
+                      Text(
+                        'Welcome Back',
+                        style: Theme.of(context).textTheme.headline3,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      
+                      Text(
+                        'Sign in to your account',
+                        style: Theme.of(context).textTheme.subtitle2,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 32),
+                      
+                      // Email field
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: Icon(Icons.email),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: Validators.validateEmail,
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Password field
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: Icon(Icons.lock),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                            ),
+                            onPressed: _togglePasswordVisibility,
+                          ),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: Validators.validatePassword,
+                      ),
+                      const SizedBox(height: 24),
+                      
+                      // Login button
+                      ElevatedButton(
+                        onPressed: _submitForm,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          child: Text(
+                            'LOGIN',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Register link
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text("Don't have an account?"),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pushNamed(context, AppRoutes.register);
+                            },
+                            child: Text('Register'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+```
+
+## lib/presentation/pages/auth/register_page.dart
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../config/app_routes.dart';
+import '../../../core/utils/validators.dart';
+import '../../bloc/auth/auth_bloc.dart';
+import '../../bloc/auth/auth_event.dart';
+import '../../bloc/auth/auth_state.dart';
+import '../../widgets/common/loading_indicator.dart';
+
+class RegisterPage extends StatefulWidget {
+  @override
+  _RegisterPageState createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _phoneController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+  
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscurePassword = !_obscurePassword;
+    });
+  }
+  
+  void _toggleConfirmPasswordVisibility() {
+    setState(() {
+      _obscureConfirmPassword = !_obscureConfirmPassword;
+    });
+  }
+  
+  void _submitForm() {
+    if (_formKey.currentState!.validate()) {
+      context.read<AuthBloc>().add(
+        RegisterEvent(
+          username: _usernameController.text.trim(),
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          phoneNumber: _phoneController.text.trim(),
+        ),
+      );
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Create Account'),
+      ),
+      body: SafeArea(
+        child: BlocConsumer<AuthBloc, AuthState>(
+          listener: (context, state) {
+            if (state is RegistrationFailed) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+            } else if (state is RegistrationSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Registration successful! Please login.')),
+              );
+              Navigator.pop(context);
+            }
+          },
+          builder: (context, state) {
+            if (state is Authenticating) {
+              return Center(child: LoadingIndicator());
+            }
+            
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Title
+                    Text(
+                      'Create a new account',
+                      style: Theme.of(context).textTheme.headline5,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Username field
+                    TextFormField(
+                      controller: _usernameController,
+                      decoration: InputDecoration(
+                        labelText: 'Username',
+                        prefixIcon: Icon(Icons.person),
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: Validators.validateUsername,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Email field
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.email),
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: Validators.validateEmail,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Phone field
+                    TextFormField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: 'Phone Number',
+                        prefixIcon: Icon(Icons.phone),
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: Validators.validatePhone,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Password field
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon: Icon(Icons.lock),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                          ),
+                          onPressed: _togglePasswordVisibility,
+                        ),
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: Validators.validatePassword,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Confirm Password field
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      obscureText: _obscureConfirmPassword,
+                      decoration: InputDecoration(
+                        labelText: 'Confirm Password',
+                        prefixIcon: Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                          ),
+                          onPressed: _toggleConfirmPasswordVisibility,
+                        ),
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value != _passwordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Register button
+                    ElevatedButton(
+                      onPressed: _submitForm,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        child: Text(
+                          'REGISTER',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Login link
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Already have an account?'),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: Text('Login'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+```
+
+## lib/presentation/pages/profile/profile_page.dart
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../config/app_routes.dart';
+import '../../bloc/auth/auth_bloc.dart';
+import '../../bloc/auth/auth_event.dart';
+import '../../bloc/auth/auth_state.dart';
+
+class ProfilePage extends StatefulWidget {
+  @override
+  _ProfilePageState createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  String? _username;
+  String? _email;
+  String? _phoneNumber;
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+  
+  Future<void> _loadUserProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _username = prefs.getString('user_name') ?? 'User';
+      _email = prefs.getString('user_email') ?? 'N/A';
+      _phoneNumber = prefs.getString('user_phone') ?? 'N/A';
+    });
+  }
+  
+  void _logout() {
+    context.read<AuthBloc>().add(LogoutEvent());
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Profile'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.exit_to_app),
+            onPressed: _logout,
+            tooltip: 'Logout',
+          ),
+        ],
+      ),
+      body: BlocListener<AuthBloc, AuthState>(
+        listener: (context, state) {
+          if (state is LoggedOut) {
+            Navigator.pushReplacementNamed(context, AppRoutes.login);
+          }
+        },
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Profile header
+              Center(
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Theme.of(context).primaryColor,
+                      child: Icon(
+                        Icons.person,
+                        size: 50,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _username ?? 'User',
+                      style: Theme.of(context).textTheme.headline5,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _email ?? 'email@example.com',
+                      style: Theme.of(context).textTheme.subtitle1?.copyWith(
+                        color: Theme.of(context).textTheme.caption?.color,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
+              
+              // Profile info section
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Personal Information',
+                        style: Theme.of(context).textTheme.headline6,
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Username
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.person_outline,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Username',
+                                  style: Theme.of(context).textTheme.caption,
+                                ),
+                                Text(
+                                  _username ?? 'N/A',
+                                  style: Theme.of(context).textTheme.subtitle1,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 32),
+                      
+                      // Email
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.email_outlined,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Email',
+                                  style: Theme.of(context).textTheme.caption,
+                                ),
+                                Text(
+                                  _email ?? 'N/A',
+                                  style: Theme.of(context).textTheme.subtitle1,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(height: 32),
+                      
+                      // Phone
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.phone_outlined,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Phone',
+                                  style: Theme.of(context).textTheme.caption,
+                                ),
+                                Text(
+                                  _phoneNumber ?? 'N/A',
+                                  style: Theme.of(context).textTheme.subtitle1,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Edit profile button
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pushNamed(context, AppRoutes.editProfile);
+                  },
+                  icon: Icon(Icons.edit),
+                  label: Text('Edit Profile'),
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
+## lib/presentation/pages/profile/edit_profile_page.dart
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/utils/validators.dart';
+import '../../bloc/auth/auth_bloc.dart';
+import '../../bloc/auth/auth_event.dart';
+import '../../bloc/auth/auth_state.dart';
+import '../../widgets/common/loading_indicator.dart';
+
+class EditProfilePage extends StatefulWidget {
+  @override
+  _EditProfilePageState createState() => _EditProfilePageState();
+}
+
+class _EditProfilePageState extends State<EditProfilePage> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  bool _isLoading = false;
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+  
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+  
+  Future<void> _loadUserProfile() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
+    final prefs = await SharedPreferences.getInstance();
+    
+    setState(() {
+      _nameController.text = prefs.getString('user_name') ?? '';
+      _phoneController.text = prefs.getString('user_phone') ?? '';
+      _isLoading = false;
+    });
+  }
+  
+  void _submitForm() {
+    if (_formKey.currentState!.validate()) {
+      context.read<AuthBloc>().add(
+        UpdateProfileEvent(
+          name: _nameController.text.trim(),
+          phoneNumber: _phoneController.text.trim(),
+        ),
+      );
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Edit Profile'),
+      ),
+      body: BlocConsumer<AuthBloc, AuthState>(
+        listener: (context, state) {
+          if (state is ProfileUpdateSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Profile updated successfully!')),
+            );
+            // Save the updated values to shared preferences
+            _saveUserData();
+            Navigator.pop(context);
+          } else if (state is ProfileUpdateFailed) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          }
+        },
+        builder: (context, state) {
+          if (_isLoading) {
+            return Center(child: LoadingIndicator());
+          }
+          
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Avatar
+                  Center(
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 60,
+                          backgroundColor: Theme.of(context).primaryColor,
+                          child: Icon(
+                            Icons.person,
+                            size: 60,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.camera_alt,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  
+                  // Name field
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Username',
+                      prefixIcon: Icon(Icons.person),
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: Validators.validateUsername,
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Phone field
+                  TextFormField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      labelText: 'Phone Number',
+                      prefixIcon: Icon(Icons.phone),
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: Validators.validatePhone,
+                  ),
+                  const SizedBox(height: 32),
+                  
+                  // Update button
+                  ElevatedButton(
+                    onPressed: state is Authenticating ? null : _submitForm,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: state is Authenticating
+                          ? SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              'UPDATE PROFILE',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+  
+  Future<void> _saveUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_name', _nameController.text);
+    await prefs.setString('user_phone', _phoneController.text);
+  }
+}
+```
+
+## lib/presentation/pages/products/products_page.dart
+```dart
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../config/app_routes.dart';
+import '../../../domain/entities/product.dart';
+import '../../bloc/products/products_bloc.dart';
+import '../../bloc/products/products_event.dart';
+import '../../bloc/products/products_state.dart';
+import '../../widgets/common/loading_indicator.dart';
+import '../../widgets/products/product_card.dart';
+
+class ProductsPage extends StatefulWidget {
+  @override
+  _ProductsPageState createState() => _ProductsPageState();
+}
+
+class _ProductsPageState extends State<ProductsPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch products when the page loads
+    context.read<ProductsBloc>().add(FetchProductsEvent());
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Products'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.person),
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.profile),
+            tooltip: 'Profile',
+          ),
+        ],
+      ),
+      body: BlocConsumer<ProductsBloc, ProductsState>(
+        listener: (context, state) {
+          if (state is ProductsError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          } else if (state is ProductDeleted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Product deleted successfully')),
+            );
+          } else if (state is ProductActionFailed) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          }
+        },
+        builder: (context, state) {
+          if (state is ProductsInitial || state is ProductsLoading) {
+            return Center(child: LoadingIndicator());
+          } else if (state is ProductsLoaded) {
+            return _buildProductsList(state.products);
+          } else if (state is ProductsError) {
+            return _buildErrorWidget(state.message);
+          }
+          
+          // Default case - show empty list
+          return _buildProductsList([]);
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.pushNamed(context, AppRoutes.addProduct),
+        child: Icon(Icons.add),
+        tooltip: 'Add Product',
+      ),
+    );
+  }
+  
+  Widget _buildProductsList(List<Product> products) {
+    if (products.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.inventory_2_outlined,
+              size: 80,
+              color: Theme.of(context).disabledColor,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No products available',
+              style: Theme.of(context).textTheme.headline6?.copyWith(
+                color: Theme.of(context).textTheme.caption?.color,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tap the + button to add your first product',
+              style: Theme.of(context).textTheme.bodyText2?.copyWith(
+                color: Theme.of(context).textTheme.caption?.color,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    return RefreshIndicator(
+      onRefresh: () async {
+        context.read<ProductsBloc>().add(FetchProductsEvent());
+      },
+      child: GridView.builder(
+        padding: const EdgeInsets.all(16.0),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.75,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+        ),
+        itemCount: products.length,
+        itemBuilder: (context, index) {
+          final product = products[index];
+          return ProductCard(
+            product: product,
+            onEdit: () {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.editProduct,
+                arguments: product,
+              );
+            },
+            onDelete: () {
+              _showDeleteConfirmationDialog(product);
+            },
+          );
+        },
+      ),
+    );
+  }
+  
+  Widget _buildErrorWidget(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 60,
+            color: Theme.of(context).errorColor,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Error loading products',
+            style: Theme.of(context).textTheme.headline6,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: Theme.of(context).textTheme.bodyText2,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              context.read<ProductsBloc>().add(FetchProductsEvent());
+            },
+            child: Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _showDeleteConfirmationDialog(Product product) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete Product'),
+        content: Text('Are you sure you want to delete "${product.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.read<ProductsBloc>().add(
+                DeleteProductEvent(id: product.id),
+              );
+            },
+            child: Text(
+              'DELETE',
+              style: TextStyle(color: Theme.of(context).errorColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+## lib/presentation/pages/products/add_product_page.dart
+```dart
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../bloc/products/products_bloc.dart';
+import '../../bloc/products/products_event.dart';
+import '../../bloc/products/products_state.dart';
+import '../../widgets/common/loading_indicator.dart';
+
+class AddProductPage extends StatefulWidget {
+  @override
+  _AddProductPageState createState() => _AddProductPageState();
+}
+
+class _AddProductPageState extends State<AddProductPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  File? _imageFile;
+  final _imagePicker = ImagePicker();
+  
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+  
+  Future<void> _pickImage() async {
+    final pickedFile = await _imagePicker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
+  
+  void _submitForm() {
+    if (_formKey.currentState!.validate()) {
+      if (_imageFile == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please select an image')),
+        );
+        return;
+      }
+      
+      context.read<ProductsBloc>().add(
+        AddProductEvent(
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          imageFile: _imageFile!,
+        ),
+      );
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Add Product'),
+      ),
+      body: BlocConsumer<ProductsBloc, ProductsState>(
+        listener: (context, state) {
+          if (state is ProductAdded) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Product added successfully')),
+            );
+            Navigator.pop(context);
+          } else if (state is ProductActionFailed) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          }
+        },
+        builder: (context, state) {
+          if (state is ProductsLoading) {
+            return Center(child: LoadingIndicator());
+          }
+          
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Image picker
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      height: 200,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Theme.of(context).dividerColor),
+                      ),
+                      child: _imageFile != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.file(
+                                _imageFile!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              ),
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_a_photo,
+                                  size: 50,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Tap to add product image',
+                                  style: Theme.of(context).textTheme.subtitle1,
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Title field
+                  TextFormField(
+                    controller: _titleController,
+                    decoration: InputDecoration(
+                      labelText: 'Title',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a title';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Description field
+                  TextFormField(
+                    controller: _descriptionController,
+                    maxLines: 5,
+                    decoration: InputDecoration(
+                      labelText: 'Description',
+                      alignLabelWithHint: true,
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a description';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Submit button
+                  ElevatedButton(
+                    onPressed: _submitForm,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: Text(
+                        'ADD PRODUCT',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+```
+
+## lib/presentation/pages/products/edit_product_page.dart
+```dart
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../domain/entities/product.dart';
+import '../../bloc/products/products_bloc.dart';
+import '../../bloc/products/products_event.dart';
+import '../../bloc/products/products_state.dart';
+import '../../widgets/common/loading_indicator.dart';
+
+class EditProductPage extends StatefulWidget {
+  @override
+  _EditProductPageState createState() => _EditProductPageState();
+}
+
+class _EditProductPageState extends State<EditProductPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  File? _imageFile;
+  String? _imageData;
+  final _imagePicker = ImagePicker();
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Get product from arguments
+    final product = ModalRoute.of(context)!.settings.arguments as Product;
+    _titleController.text = product.title;
+    _descriptionController.text = product.description;
+    _imageData = product.imageData;
+  }
+  
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+  
+  Future<void> _pickImage() async {
+    final pickedFile = await _imagePicker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+        _imageData = null; // Clear the base64 image once a new image is selected
+      });
+    }
+  }
+  
+  void _submitForm() {
+    if (_formKey.currentState!.validate()) {
+      if (_imageFile == null && _imageData == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please select an image')),
+        );
+        return;
+      }
+      
+      final product = ModalRoute.of(context)!.settings.arguments as Product;
+      
+      if (_imageFile != null) {
+        context.read<ProductsBloc>().add(
+          UpdateProductEvent(
+            id: product.id,
+            title: _titleController.text.trim(),
+            description: _descriptionController.text.trim(),
+            imageFile: _imageFile!,
+          ),
+        );
+      } else {
+        // Handle case where image is not changed
+        // In a real app, you would need to implement this differently
+        // depending on your API requirements
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('You need to select a new image to update the product')),
+        );
+      }
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Edit Product'),
+      ),
+      body: BlocConsumer<ProductsBloc, ProductsState>(
+        listener: (context, state) {
+          if (state is ProductUpdated) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Product updated successfully')),
+            );
+            Navigator.pop(context);
+          } else if (state is ProductActionFailed) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          }
+        },
+        builder: (context, state) {
+          if (state is ProductsLoading) {
+            return Center(child: LoadingIndicator());
+          }
+          
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Image picker
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      height: 200,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Theme.of(context).dividerColor),
+                      ),
+                      child: _imageFile != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.file(
+                                _imageFile!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              ),
+                            )
+                          : _imageData != null 
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.memory(
+                                  // In a real app, you would convert the base64 string to bytes
+                                  // This is a placeholder
+                                  Uint8List(0),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.image_not_supported,
+                                            size: 50,
+                                            color: Theme.of(context).errorColor,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Unable to load image',
+                                            style: Theme.of(context).textTheme.subtitle1,
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              )
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.add_a_photo,
+                                    size: 50,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Tap to change product image',
+                                    style: Theme.of(context).textTheme.subtitle1,
+                                  ),
+                                ],
+                              ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Title field
+                  TextFormField(
+                    controller: _titleController,
+                    decoration: InputDecoration(
+                      labelText: 'Title',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a title';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Description field
+                  TextFormField(
+                    controller: _descriptionController,
+                    maxLines: 5,
+                    decoration: InputDecoration(
+                      labelText: 'Description',
+                      alignLabelWithHint: true,
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a description';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Submit button
+                  ElevatedButton(
+                    onPressed: _submitForm,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: Text(
+                        'UPDATE PRODUCT',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+```
+
+# Widgets
+
+## lib/presentation/widgets/common/loading_indicator.dart
+```dart
+import 'package:flutter/material.dart';
+
+class LoadingIndicator extends StatelessWidget {
+  final Color? color;
+  final double size;
+  
+  const LoadingIndicator({
+    Key? key,
+    this.color,
+    this.size = 40.0,
+  }) : super(key: key);
+  
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: CircularProgressIndicator(
+          color: color ?? Theme.of(context).primaryColor,
+          strokeWidth: 3.0,
+        ),
+      ),
+    );
+  }
+}
+```
+
+## lib/presentation/widgets/products/product_card.dart
+```dart
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import '../../../domain/entities/product.dart';
+
+class ProductCard extends StatelessWidget {
+  final Product product;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  
+  const ProductCard({
+    Key? key,
+    required this.product,
+    required this.onEdit,
+    required this.onDelete,
+  }) : super(key: key);
+  
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      elevation: 2.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Product image
+          Expanded(
+            child: Stack(
+              children: [
+                // Image
+                Container(
+                  width: double.infinity,
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                  ),
+                  child: _buildProductImage(),
+                ),
+                
+                // Edit/Delete buttons
+                Positioned(
+                  top: 8.0,
+                  right: 8.0,
+                  child: Row(
+                    children: [
+                      // Edit button
+                      _buildIconButton(
+                        Icons.edit,
+                        Colors.orange,
+                        onEdit,
+                        'Edit',
+                      ),
+                      const SizedBox(width: 8.0),
+                      
+                      // Delete button
+                      _buildIconButton(
+                        Icons.delete,
+                        Colors.red,
+                        onDelete,
+                        'Delete',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Product details
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title
+                Text(
+                  product.title,
+                  style: Theme.of(context).textTheme.subtitle1?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4.0),
+                
+                // Description
+                Text(
+                  product.description,
+                  style: Theme.of(context).textTheme.bodyText2,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildProductImage() {
+    try {
+      // In a real app, you would convert the base64 string to bytes
+      // This is a placeholder
+      return Image.memory(
+        Uint8List(0),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Center(
+            child: Icon(
+              Icons.image_not_supported,
+              size: 40,
+              color: Colors.grey[600],
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      return Center(
+        child: Icon(
+          Icons.image_not_supported,
+          size: 40,
+          color: Colors.grey[600],
+        ),
+      );
+    }
+  }
+  
+  Widget _buildIconButton(
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+    String tooltip,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4.0,
+            spreadRadius: 1.0,
+          ),
+        ],
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: color),
+        onPressed: onTap,
+        tooltip: tooltip,
+        iconSize: 20.0,
+        constraints: BoxConstraints(
+          minWidth: 36.0,
+          minHeight: 36.0,
+        ),
+        padding: EdgeInsets.zero,
+        splashRadius: 24.0,
+      ),
+    );
+  }
+}
+```
+
+## lib/core/utils/validators.dart
+```dart
+class Validators {
+  static String? validateUsername(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a username';
+    }
+    if (value.length < 3) {
+      return 'Username must be at least 3 characters';
+    }
+    return null;
+  }
+  
+  static String? validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter an email';
+    }
+    
+    final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegExp.hasMatch(value)) {
+      return 'Please enter a valid email';
+    }
+    
+    return null;
+  }
+  
+  static String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a password';
+    }
+    
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+    
+    return null;
+  }
+  
+  static String? validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a phone number';
+    }
+    
+    final phoneRegExp = RegExp(r'^\d{6,15}$');
+    if (!phoneRegExp.hasMatch(value)) {
+      return 'Please enter a valid phone number';
+    }
+    
+    return null;
+  }
+}
+```
+
+# pubspec.yaml
+```yaml
+name: ecommerce_app
+description: A Flutter e-commerce application with backend integration.
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
+  
+  # State management
+  flutter_bloc: ^8.1.2
+  equatable: ^2.0.5
+  
+  # Network and API
+  dio: ^5.1.1
+  http: ^0.13.5
+  
+  # Storage
+  shared_preferences: ^2.1.0
+  
+  # UI
+  cupertino_icons: ^1.0.5
+  cached_network_image: ^3.2.3
+  image_picker: ^0.8.7+4
+  flutter_svg: ^2.0.5
+  
+  # Utils
+  intl: ^0.18.0
+  path: ^1.8.2
+  path_provider: ^2.0.14
+  url_launcher: ^6.1.10
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.1
+  bloc_test: ^9.1.1
+  mockito: ^5.4.0
+  build_runner: ^2.3.3
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/icons/
+  
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
+```

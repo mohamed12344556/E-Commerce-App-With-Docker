@@ -1,0 +1,194 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|c:\\users\\kareem_ashraf\\source\\repos\\loginpage\\loginpage\\controller\\account.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|solutionrelative:loginpage\\controller\\account.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|c:\\users\\kareem_ashraf\\source\\repos\\loginpage\\loginpage\\data\\models\\item.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|solutionrelative:loginpage\\data\\models\\item.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|c:\\users\\kareem_ashraf\\source\\repos\\loginpage\\loginpage\\data\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|solutionrelative:loginpage\\data\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|c:\\users\\kareem_ashraf\\source\\repos\\loginpage\\loginpage\\controller\\itemcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|solutionrelative:loginpage\\controller\\itemcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|c:\\users\\kareem_ashraf\\source\\repos\\loginpage\\loginpage\\model\\dtologin.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|solutionrelative:loginpage\\model\\dtologin.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|c:\\users\\kareem_ashraf\\source\\repos\\loginpage\\loginpage\\model\\dboappuser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|solutionrelative:loginpage\\model\\dboappuser.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|c:\\users\\kareem_ashraf\\source\\repos\\loginpage\\loginpage\\model\\dtoitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|solutionrelative:loginpage\\model\\dtoitem.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|c:\\users\\kareem_ashraf\\source\\repos\\loginpage\\loginpage\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|solutionrelative:loginpage\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|c:\\users\\kareem_ashraf\\source\\repos\\loginpage\\loginpage\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|solutionrelative:loginpage\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|c:\\users\\kareem_ashraf\\source\\repos\\loginpage\\loginpage\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{CB55B707-4F3C-40B8-B96A-6887D9985364}|loginPage\\loginPage.csproj|solutionrelative:loginpage\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 6,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{0174dea2-fdbe-4ef1-8f99-c0beae78880f}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "ItemController.cs",
+              "DocumentMoniker": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Controller\\ItemController.cs",
+              "RelativeDocumentMoniker": "loginPage\\Controller\\ItemController.cs",
+              "ToolTip": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Controller\\ItemController.cs",
+              "RelativeToolTip": "loginPage\\Controller\\ItemController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-10T23:23:20.527Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "DtoItem.cs",
+              "DocumentMoniker": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Model\\DtoItem.cs",
+              "RelativeDocumentMoniker": "loginPage\\Model\\DtoItem.cs",
+              "ToolTip": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Model\\DtoItem.cs",
+              "RelativeToolTip": "loginPage\\Model\\DtoItem.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-10T23:21:54.684Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Item.cs",
+              "DocumentMoniker": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Data\\Models\\Item.cs",
+              "RelativeDocumentMoniker": "loginPage\\Data\\Models\\Item.cs",
+              "ToolTip": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Data\\Models\\Item.cs",
+              "RelativeToolTip": "loginPage\\Data\\Models\\Item.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAAwAwAAABCAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-10T23:19:23.314Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "dtoLogin.cs",
+              "DocumentMoniker": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Model\\dtoLogin.cs",
+              "RelativeDocumentMoniker": "loginPage\\Model\\dtoLogin.cs",
+              "ToolTip": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Model\\dtoLogin.cs",
+              "RelativeToolTip": "loginPage\\Model\\dtoLogin.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-08T11:28:43.709Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Account.cs",
+              "DocumentMoniker": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Controller\\Account.cs",
+              "RelativeDocumentMoniker": "loginPage\\Controller\\Account.cs",
+              "ToolTip": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Controller\\Account.cs",
+              "RelativeToolTip": "loginPage\\Controller\\Account.cs",
+              "ViewState": "AgIAAGoAAAAAAAAAAAAvwHkAAAATAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-07T16:38:43.315Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "dboAppUser.cs",
+              "DocumentMoniker": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Model\\dboAppUser.cs",
+              "RelativeDocumentMoniker": "loginPage\\Model\\dboAppUser.cs",
+              "ToolTip": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Model\\dboAppUser.cs",
+              "RelativeToolTip": "loginPage\\Model\\dboAppUser.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAsAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-07T16:36:27.422Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "User.cs",
+              "DocumentMoniker": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Data\\Models\\User.cs",
+              "RelativeDocumentMoniker": "loginPage\\Data\\Models\\User.cs",
+              "ToolTip": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Data\\Models\\User.cs",
+              "RelativeToolTip": "loginPage\\Data\\Models\\User.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-07T14:22:00.619Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "AppDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Data\\AppDbContext.cs",
+              "RelativeDocumentMoniker": "loginPage\\Data\\AppDbContext.cs",
+              "ToolTip": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Data\\AppDbContext.cs",
+              "RelativeToolTip": "loginPage\\Data\\AppDbContext.cs",
+              "ViewState": "AgIAAAQAAAAAAAAAAAAkwBIAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-07T14:17:52.731Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Program.cs",
+              "RelativeDocumentMoniker": "loginPage\\Program.cs",
+              "ToolTip": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\Program.cs",
+              "RelativeToolTip": "loginPage\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABwAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-01-07T14:08:28.702Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\appsettings.json",
+              "RelativeDocumentMoniker": "loginPage\\appsettings.json",
+              "ToolTip": "C:\\Users\\Kareem_Ashraf\\source\\repos\\loginPage\\loginPage\\appsettings.json",
+              "RelativeToolTip": "loginPage\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAOAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-01-07T14:05:55.561Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
