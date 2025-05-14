@@ -1,54 +1,5 @@
-version: '3.8'
+# version: '3.8'
 
-services:
-  # SQL Server
-  sql-server:
-    image: mcr.microsoft.com/mssql/server:2019-latest
-    environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourStrongPassword123!
-    ports:
-      - "1433:1433"
-    volumes:
-      - sql-data:/var/opt/mssql
-    networks:
-      - ecommerce-network
-
-  # Backend API
-  backend:
-    build:
-      context: ./backend/loginPage
-      dockerfile: Dockerfile
-    ports:
-      - "5163:80"
-    depends_on:
-      - sql-server
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__conStr=Server=sql-server;Database=DotNetCore-ECommerce.Identity;User Id=sa;Password=YourStrongPassword123!;TrustServerCertificate=true;
-    networks:
-      - ecommerce-network
-
-  # Frontend (Flutter Web)
-  frontend:
-    build:
-      context: ./ecommerce_app
-      dockerfile: Dockerfile
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-    networks:
-      - ecommerce-network
-
-networks:
-  ecommerce-network:
-    driver: bridge
-
-volumes:
-  sql-data:
-
-#################
 # services:
 #   # SQL Server
 #   sql-server:
@@ -84,7 +35,7 @@ volumes:
 #       context: ./ecommerce_app
 #       dockerfile: Dockerfile
 #     ports:
-#       - "8080:80"
+#       - "80:80"
 #     depends_on:
 #       - backend
 #     networks:
@@ -96,3 +47,52 @@ volumes:
 
 # volumes:
 #   sql-data:
+
+#################
+services:
+  # SQL Server
+  sql-server:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrongPassword123!
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql-data:/var/opt/mssql
+    networks:
+      - ecommerce-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend/loginPage
+      dockerfile: Dockerfile
+    ports:
+      - "5163:80"
+    depends_on:
+      - sql-server
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__conStr=Server=sql-server;Database=DotNetCore-ECommerce.Identity;User Id=sa;Password=YourStrongPassword123!;TrustServerCertificate=true;
+    networks:
+      - ecommerce-network
+
+  # Frontend (Flutter Web)
+  frontend:
+    build:
+      context: ./ecommerce_app
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - ecommerce-network
+
+networks:
+  ecommerce-network:
+    driver: bridge
+
+volumes:
+  sql-data:
