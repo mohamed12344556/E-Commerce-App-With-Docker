@@ -4,15 +4,27 @@ import 'package:flutter/foundation.dart';
 
 class ApiConstants {
   // Base URL
+  // static String get baseUrl {
+  //   if (kIsWeb) {
+  //     return 'http://localhost:5163';
+  //   } else if (Platform.isAndroid) {
+  //     return 'http://10.0.2.2:5163'; // Android Emulator
+  //   } else if (Platform.isIOS) {
+  //     return 'http://localhost:5163'; // iOS Simulator
+  //   } else {
+  //     return 'http://192.168.1.4:5163';
+  //   }
+  // }
+
   static String get baseUrl {
     if (kIsWeb) {
-      return 'http://localhost:5163';
+      return 'http://backend'; // Use Docker service name for web
     } else if (Platform.isAndroid) {
       return 'http://10.0.2.2:5163'; // Android Emulator
     } else if (Platform.isIOS) {
       return 'http://localhost:5163'; // iOS Simulator
     } else {
-      return 'http://192.168.1.4:5163';
+      return 'http://backend:5163'; // For other platforms in Docker
     }
   }
 
