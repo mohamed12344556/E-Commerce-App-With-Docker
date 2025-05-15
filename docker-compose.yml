@@ -1,67 +1,26 @@
-# version: '3.8'
+version: '3.8'
 
-# services:
-#   # SQL Server
-#   sql-server:
-#     image: mcr.microsoft.com/mssql/server:2019-latest
-#     environment:
-#       - ACCEPT_EULA=Y
-#       - SA_PASSWORD=YourStrongPassword123!
-#     ports:
-#       - "1433:1433"
-#     volumes:
-#       - sql-data:/var/opt/mssql
-#     networks:
-#       - ecommerce-network
-
-#   # Backend API
-#   backend:
-#     build:
-#       context: ./backend/loginPage
-#       dockerfile: Dockerfile
-#     ports:
-#       - "5163:80"
-#     depends_on:
-#       - sql-server
-#     environment:
-#       - ASPNETCORE_ENVIRONMENT=Development
-#       - ConnectionStrings__conStr=Server=sql-server;Database=DotNetCore-ECommerce.Identity;User Id=sa;Password=YourStrongPassword123!;TrustServerCertificate=true;
-#     networks:
-#       - ecommerce-network
-
-#   # Frontend (Flutter Web)
-#   frontend:
-#     build:
-#       context: ./ecommerce_app
-#       dockerfile: Dockerfile
-#     ports:
-#       - "80:80"
-#     depends_on:
-#       - backend
-#     networks:
-#       - ecommerce-network
-
-# networks:
-#   ecommerce-network:
-#     driver: bridge
-
-# volumes:
-#   sql-data:
-
-#################
 services:
   # SQL Server
   sql-server:
     image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: ecommerce-sql-server
     environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourStrongPassword123!
+        - ASPNETCORE_ENVIRONMENT=Development
+        - ASPNETCORE_URLS=http://+:80
+        - ConnectionStrings__conStr=Server=sql-server;Database=Ecommerce;User Id=sa;Password=YourStrongPassword123!;TrustServerCertificate=true;
     ports:
       - "1433:1433"
     volumes:
       - sql-data:/var/opt/mssql
     networks:
       - ecommerce-network
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "YourStrongPassword123!" -Q "SELECT 1"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   # Backend API
   backend:
@@ -70,23 +29,15 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5163:80"
-    depends_on:
-      - sql-server
+      - "5443:443"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__conStr=Server=sql-server;Database=DotNetCore-ECommerce.Identity;User Id=sa;Password=YourStrongPassword123!;TrustServerCertificate=true;
-    networks:
-      - ecommerce-network
-
-  # Frontend (Flutter Web)
-  frontend:
-    build:
-      context: ./ecommerce_app
-      dockerfile: Dockerfile
-    ports:
-      - "8080:80"
+      - ASPNETCORE_URLS=http://+:80    # ——> يخلي Kestrel يستمع على كل الواجهات
+      - ConnectionStrings__conStr=Server=sql-server;Database=Ecommerce;User Id=sa;Password=pass@word;TrustServerCertificate=true;
+      - JWt__Issuer=http://localhost:5163
+      - JWt__Audience=http://localhost:8080
     depends_on:
-      - backend
+      - sql-server
     networks:
       - ecommerce-network
 
@@ -96,3 +47,4 @@ networks:
 
 volumes:
   sql-data:
+    name: ecommerce-db-data
